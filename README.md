@@ -26,6 +26,8 @@ cmake -B build -S . [flag(s)]
 
 During the configuration process, the examples not will be compiled. If you want to compile them, you could pass the -DBUILD_EXAMPLES=ON flag to the cmake command above.
 
+Do you need choose the one API graphics, else the cmake will show you the message of the error. The options are DIRECTX11 (in the future I will the expand the options)
+
 ### Build
 
 After configuring the project, you can build it using the following command:
