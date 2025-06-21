@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Graphics.h"
 #include "Window.h"
 #include "Input.h"
 
@@ -8,6 +9,7 @@ namespace Luna
     class Game
     {
     protected:
+        static Graphics *& graphics;
         static Window*   & window;
         static Input*    & input;
         static double    & frameTime;
