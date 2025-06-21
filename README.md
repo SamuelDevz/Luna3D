@@ -24,9 +24,19 @@ the following commands:
 cmake -B build -S . [flag(s)]
 ```
 
-During the configuration process, the examples not will be compiled. If you want to compile them, you could pass the -DBUILD_EXAMPLES=ON flag to the cmake command above.
+### Preprocessor Definitions
 
-Do you need choose the one API graphics, else the cmake will show you the message of the error. The options are DIRECTX11 (in the future I will the expand the options)
+| CMake Options    | Description | Value |
+|:----------------:|:-----------:|:-----------:|
+| `BUILD_EXAMPLES` | Build examples of the project. | OFF |
+
+Alternatively you can set the following preprocessor definitions manually:
+
+| Definition | Description | Value |
+|:----------:|:-----------:|:-----:|
+| `DIRECTX11` | DirectX 11 | OFF   |
+
+**Nota:** Do you need choose the one API graphics, else the cmake will show you the message of the error.
 
 ### Build
 
