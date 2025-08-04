@@ -1,4 +1,5 @@
-set(SOURCE_FILES src/DebugLayer.cpp
+set(SOURCE_FILES src/Logger.cpp
+    src/DebugLayer.cpp
     src/Graphics.cpp)
 
 add_library(graphics STATIC ${SOURCE_FILES})

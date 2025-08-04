@@ -2,6 +2,7 @@
 
 #include <dxgi1_6.h>
 #include <d3d11_4.h>
+#include "Logger.h"
 #include "DebugLayer.h"
 #include "Window.h"
 #include "Types.h"
@@ -39,6 +40,8 @@ namespace Luna
         void RefreshRate() noexcept;
 
     public:
+        static Logger logger;
+
         explicit Graphics() noexcept;
         ~Graphics() noexcept;
 

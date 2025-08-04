@@ -6,6 +6,8 @@ using std::format;
 
 namespace Luna
 {
+    Logger Graphics::logger;
+    
     Graphics::Graphics() noexcept 
         : device{nullptr},
         context{nullptr},
@@ -68,7 +70,7 @@ namespace Luna
         {
             DXGI_ADAPTER_DESC desc;
             adapter->GetDesc(&desc);
-            OutputDebugStringW(format(L"---> Video adapter GPU: {}\n", desc.Description).c_str());
+            logger.OutputDebugW(LOG_LEVEL_INFO, format(L"---> Video adapter GPU: {}\n", desc.Description).c_str());
         }
 
         IDXGIAdapter4* adapter4 = nullptr;
@@ -77,8 +79,14 @@ namespace Luna
             DXGI_QUERY_VIDEO_MEMORY_INFO memInfo;
             adapter4->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &memInfo);
             
-            OutputDebugStringW(format(L"---> Video memory (free): {}MB\n", memInfo.Budget / BytesinMegaByte).c_str());
-            OutputDebugStringW(format(L"---> Video memory (used): {}MB\n", memInfo.CurrentUsage / BytesinMegaByte).c_str());
+            logger.OutputDebug(LOG_LEVEL_INFO, 
+                format("---> Video memory (free): {}MB\n", 
+                    memInfo.Budget / BytesinMegaByte).c_str()
+            );
+            logger.OutputDebug(LOG_LEVEL_INFO, 
+                format("---> Video memory (used): {}MB\n", 
+                    memInfo.CurrentUsage / BytesinMegaByte).c_str()
+            );
 
             adapter4->Release();
         }
@@ -88,18 +96,18 @@ namespace Luna
         // -----------------------------------------
 
         {
-            wstring text = L"---> Feature Level: ";
+            string text = "---> Feature Level: ";
             switch (featureLevel)
             {
-                case D3D_FEATURE_LEVEL_11_1: text += L"11_1\n"; break;
-                case D3D_FEATURE_LEVEL_11_0: text += L"11_0\n"; break;
-                case D3D_FEATURE_LEVEL_10_1: text += L"10_1\n"; break;
-                case D3D_FEATURE_LEVEL_10_0: text += L"10_0\n"; break;
-                case D3D_FEATURE_LEVEL_9_3:  text += L"9_3\n";  break;
-                case D3D_FEATURE_LEVEL_9_2:  text += L"9_2\n";  break;
-                case D3D_FEATURE_LEVEL_9_1:  text += L"9_1\n";  break;
+                case D3D_FEATURE_LEVEL_11_1: text += "11_1\n"; break;
+                case D3D_FEATURE_LEVEL_11_0: text += "11_0\n"; break;
+                case D3D_FEATURE_LEVEL_10_1: text += "10_1\n"; break;
+                case D3D_FEATURE_LEVEL_10_0: text += "10_0\n"; break;
+                case D3D_FEATURE_LEVEL_9_3:  text += "9_3\n";  break;
+                case D3D_FEATURE_LEVEL_9_2:  text += "9_2\n";  break;
+                case D3D_FEATURE_LEVEL_9_1:  text += "9_1\n";  break;
             }
-            OutputDebugStringW(text.c_str());
+            logger.OutputDebug(LOG_LEVEL_INFO, text.c_str());
         }
 
         // -----------------------------------------
@@ -111,7 +119,7 @@ namespace Luna
         {
             DXGI_OUTPUT_DESC desc;
             output->GetDesc(&desc);
-            OutputDebugStringW(format(L"---> Monitor: {}\n", desc.DeviceName).c_str());
+            logger.OutputDebugW(LOG_LEVEL_INFO, format(L"---> Monitor: {}\n", desc.DeviceName).c_str());
         }
 
         // ------------------------------------------
@@ -122,8 +130,8 @@ namespace Luna
         int32 screenWidth { GetSystemMetricsForDpi(SM_CXSCREEN, dpi) }; 
         int32 screenHeight { GetSystemMetricsForDpi(SM_CYSCREEN, dpi) };
 
-        OutputDebugStringW(
-            format(L"---> Resolution: {}x{} {}Hz\n",
+        logger.OutputDebug(LOG_LEVEL_INFO,
+            format("---> Resolution: {}x{} {}Hz\n",
                 screenWidth, screenHeight, refreshRate).c_str()
         );
 
