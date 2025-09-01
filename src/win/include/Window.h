@@ -2,13 +2,14 @@
 
 #include "Types.h"
 #include "WinInclude.h"
+#include "Export.h"
 #include <windows.h>
 
 namespace Luna
 {
     enum WindowModes { FULLSCREEN, WINDOWED, BORDERLESS };
 
-    class Window
+    class DLL Window
     {
     private:
         HWND		windowHandle;
