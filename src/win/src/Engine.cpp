@@ -6,8 +6,9 @@ using std::format;
 
 namespace Luna 
 {
-    Window * Engine::window = nullptr;
-    Game * Engine::game = nullptr;
+    Window*   Engine::window = nullptr;
+    Input*    Engine::input = nullptr;
+    Game*     Engine::game = nullptr;
 
     Engine::Engine() noexcept
     {
@@ -17,6 +18,7 @@ namespace Luna
     Engine::~Engine() noexcept
     {
         delete game;
+        delete input;
         delete window;
     }
 
@@ -25,6 +27,8 @@ namespace Luna
         this->game = game;
 
         window->Create();
+
+        input = new Input();
 
         SetWindowLongPtr(window->Id(), GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(EngineProc));
 
@@ -61,6 +65,6 @@ namespace Luna
         if (msg == WM_PAINT)
             game->Display();
 
-        return DefWindowProc(hWnd, msg, wParam, lParam);
+        return CallWindowProc(Input::InputProc, hWnd, msg, wParam, lParam);
     }
 }
