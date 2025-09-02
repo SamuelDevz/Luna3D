@@ -5,10 +5,10 @@ set(SOURCE_FILES src/Timer.cpp
 
 # window library
 if(SHARED_LIBRARIES)
-    add_library(window SHARED src/Window.cpp)
+    add_library(window SHARED src/Window.cpp src/Error.cpp)
     target_compile_definitions(window PUBLIC ENGINE_EXPORTS)
 else()
-    add_library(window STATIC src/Window.cpp)
+    add_library(window STATIC src/Window.cpp src/Error.cpp)
 endif()
 
 target_include_directories(window PUBLIC include)
