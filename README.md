@@ -10,6 +10,8 @@ Obviamente que não há pretenção em concorrer com motores profissionais a ní
 Luna3D/
 ├── src/                # Código-fonte (.cpp)
 │   ├── win/            # plataforma windows
+│   ├── linux/          # plataforma linux
+│   │   └── Xlib/       # biblioteca Xlib
 │   └── ...             # Outras plataformas (Em breve)
 ├── examples/           # Alguns exemplos de código usando a game engine
 │   ├── simplewindow/   # Cria um simples janela
@@ -34,6 +36,16 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 
 - [Windows 10 SDK](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads)
 
+#### Linux
+
+##### XLib
+
+- X11
+- Xcursor
+- png++
+
+OBS: Tu precisa do arquivo no formato Xcursor para mudar o cursor da janela. Uma dica seria pegar um arquivo .CUR e converte-lo usando [win2xcur](https://github.com/quantum5/win2xcur)
+
 ### Configuração e Construção do projeto
 
 1. Clone o repositório.
@@ -52,10 +64,14 @@ cmake --build build [Release/Debug]
 
 ### Definições de pré-processador
 
-| Opções do CMake  | Descrição | Valor |
-|:----------------:|:---------:|:-----:|
+| Opções do CMake | Descrição | Valor |
+|:---------------:|:---------:|:-----:|
 | `BUILD_EXAMPLES` | Build examples of the project. | OFF |
 | `SHARED_LIBRARIES` | Use the shared libs in the project. | OFF |
+
+| Bibliotecas | Plataforma | Descrição | Valor |
+|:-----------:|:----------:|:---------:|:-----:|
+| `BUILD_X11` | Linux | Build the engine using Xlib. | OFF |
 
 Para habilitar esses definições você deve habilitar no local onde está as flag(s) acima. Aqui um exemplo:
 
