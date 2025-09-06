@@ -6,9 +6,9 @@ find_package(PNG REQUIRED)
 
 # window library
 if(SHARED_LIBRARIES)
-    add_library(window SHARED src/Window.cpp)
+    add_library(window SHARED src/Window.cpp src/Error.cpp src/MessageBox.cpp)
 else()
-    add_library(window STATIC src/Window.cpp)
+    add_library(window STATIC src/Window.cpp src/Error.cpp src/MessageBox.cpp)
 endif()
 
 target_include_directories(window PUBLIC include ${X11_INCLUDE_DIR} ${PNG_INCLUDE_DIRS})
