@@ -25,7 +25,7 @@ namespace Luna
             const string_view file, 
             const int32 line,
             const string_view message = "") noexcept;
-        virtual string ToString();
+        virtual string ToString() const;
     };
 
     #ifndef ThrowIfFailed

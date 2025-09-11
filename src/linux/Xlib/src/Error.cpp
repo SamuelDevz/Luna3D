@@ -23,7 +23,7 @@ namespace Luna
             fileName = file.substr(pos + 1);
     }
 
-    string Error::ToString()
+    string Error::ToString() const
     {
         char buffer[1024];
         XGetErrorText(display, hrCode, buffer, sizeof(buffer));
