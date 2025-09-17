@@ -3,7 +3,6 @@
 #include <string>
 #include <filesystem>
 #include <source_location>
-#include <iostream>
 
 std::string GetCursorFile()
 {
