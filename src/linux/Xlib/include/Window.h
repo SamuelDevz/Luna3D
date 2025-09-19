@@ -10,16 +10,19 @@ namespace Luna
 {
     enum WindowModes { FULLSCREEN, WINDOWED, BORDERLESS };
 
+    using XWindow = ::Window;
+    using XCursor = ::Cursor;
+
     class DLL Window
     {
     private:
         Display*    display;
-        ::Window    window;
+        XWindow     window;
         Screen*     screen;
         int32		windowWidth;
         int32		windowHeight;
         string      windowIcon;
-        ::Cursor	windowCursor;
+        XCursor	    windowCursor;
         XColor	    windowColor;
         string		windowTitle;
         int32		windowMode;
@@ -41,7 +44,7 @@ namespace Luna
         ~Window() noexcept;
 
         Display* XDisplay() const noexcept;
-        ::Window XWindow() const noexcept;
+        XWindow Id() const noexcept;
         Atom WMDeleteWindow() const noexcept;
         int32 Width() const noexcept;
         int32 Height() const noexcept;
@@ -70,7 +73,7 @@ namespace Luna
     inline Display* Window::XDisplay() const noexcept
     { return display; }
 
-    inline ::Window Window::XWindow() const noexcept
+    inline XWindow Window::Id() const noexcept
     { return window; }
         
     inline Atom Window::WMDeleteWindow() const noexcept
