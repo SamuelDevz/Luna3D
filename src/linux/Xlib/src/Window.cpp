@@ -2,7 +2,7 @@
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 #include <X11/Xatom.h>
-#include <png++/png.hpp>
+#include <png.h>
 
 #define _NET_WM_STATE_REMOVE        0    // remove/unset property
 #define _NET_WM_STATE_ADD           1    // add/set property
@@ -77,41 +77,104 @@ namespace Luna
         XFlush(display);
     }
 
-    void SetIcon(Display * display, ::Window window, const string_view filename)
-    {    
-        png::image<png::rgba_pixel> image(filename.data());
-        int width = image.get_width();
-        int height = image.get_height();
-
-        unsigned long * iconData = new unsigned long[width * height];
-        for (int y = 0; y < height; ++y) 
+    bool LoadPNG(const string_view filename, unsigned char ** imageData, int & width, int & height)
+    {
+        FILE *fp = fopen(filename.data(), "rb");
+        if (!fp) 
+            return false;
+    
+        png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+        if (!png) 
         {
-            for (int x = 0; x < width; ++x) 
-            {
-                png::rgba_pixel pixel = image.get_pixel(x, y);
-                unsigned long pixelValue = (pixel.alpha << 24) | (pixel.red << 16) | (pixel.green << 8) | pixel.blue;
-                iconData[y * width + x] = pixelValue;
-            }
+            fclose(fp);
+            return false;
+        }
+    
+        png_infop info = png_create_info_struct(png);
+        if (!info) 
+        {
+            png_destroy_read_struct(&png, nullptr, nullptr);
+            fclose(fp);
+            return false;
+        }
+    
+        if (setjmp(png_jmpbuf(png))) 
+        {
+            png_destroy_read_struct(&png, &info, nullptr);
+            fclose(fp);
+            return false;
+        }
+    
+        png_init_io(png, fp);
+        png_read_info(png, info);
+    
+        width = png_get_image_width(png, info);
+        height = png_get_image_height(png, info);
+        png_byte bitDepth = png_get_bit_depth(png, info);
+        png_byte colorType = png_get_color_type(png, info);
+    
+        if (colorType == PNG_COLOR_TYPE_PALETTE) 
+            png_set_palette_to_rgb(png);
+
+        if (colorType == PNG_COLOR_TYPE_GRAY && bitDepth < 8) 
+            png_set_expand_gray_1_2_4_to_8(png);
+        
+        if (png_get_valid(png, info, PNG_INFO_tRNS))
+            png_set_tRNS_to_alpha(png);
+
+        if (bitDepth == 16)
+            png_set_strip_16(png);
+    
+        png_set_expand(png);
+        png_read_update_info(png, info);
+    
+        *imageData = new unsigned char[png_get_rowbytes(png, info) * height];
+        png_bytep* rowPointers = new png_bytep[height];
+        for (int y = 0; y < height; ++y)
+            rowPointers[y] = *imageData + y * png_get_rowbytes(png, info);
+    
+        png_read_image(png, rowPointers);
+        png_destroy_read_struct(&png, &info, nullptr);
+        delete[] rowPointers;
+        delete[] *imageData;
+        fclose(fp);
+
+        return true;
+    }
+
+    void SetIcon(Display * display, ::Window window, const string_view filename)
+    {
+        int width, height;
+        unsigned char * dataImage;
+        LoadPNG(filename.data(), &dataImage, width, height);
+
+        int longCount = 2 + width * height;
+
+        unsigned long* icon = new unsigned long[longCount * sizeof(unsigned long)];
+        unsigned long* target = icon;
+
+        *target++ = width;
+        *target++ = height;
+
+        for (int i = 0; i < width * height; ++i)
+        {
+            *target++ = 
+            ((dataImage[i * 4 + 2])) |
+            ((dataImage[i * 4 + 1]) << 8) |
+            ((dataImage[i * 4 + 0]) << 16) |
+            ((dataImage[i * 4 + 3]) << 24);
         }
 
-        unsigned long * data = new unsigned long[2 + width * height];
-        data[0] = width;
-        data[1] = height;
-        for (int i = 0; i < width * height; ++i)
-            data[i + 2] = iconData[i];
-
-        XChangeProperty(display,
-            window,
-            XInternAtom(display, "_NET_WM_ICON", false),
-            XA_CARDINAL,
+        Atom netWmIcon = XInternAtom(display, "_NET_WM_ICON", false);
+        XChangeProperty(display, window,
+            netWmIcon,
+            XA_CARDINAL, 
             32,
             PropModeReplace,
-            (unsigned char *)data,
-            2 + width * height
-        );
+            (unsigned char*) icon,
+            longCount);
 
-        delete[] iconData;
-        delete[] data;
+        delete[] icon;
     }
 
     void Fullscreen(Display *display, ::Window window)
