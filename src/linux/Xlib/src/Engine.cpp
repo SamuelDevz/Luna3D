@@ -44,7 +44,7 @@ namespace Luna
             XNextEvent(window->XDisplay(), &event);
             game->Update();
             game->Draw();
-        } while (!XPending(window->XDisplay()) && !Quit(&event, window->WMDeleteWindow()));
+        } while (!Quit(&event, window->WMDeleteWindow()));
 
         game->Finalize();
 
