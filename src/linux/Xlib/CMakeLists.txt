@@ -1,4 +1,5 @@
-set(SOURCE_FILES src/Game.cpp
+set(SOURCE_FILES src/Input.cpp
+    src/Game.cpp
     src/Engine.cpp)
 
 find_package(X11 REQUIRED COMPONENTS Xcursor)
