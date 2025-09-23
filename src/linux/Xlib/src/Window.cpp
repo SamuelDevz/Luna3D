@@ -287,4 +287,20 @@ namespace Luna
 
         return true;
     }
+
+    void Window::WinProc(XEvent * event)
+    {
+        switch(event->type)
+        {
+        case FocusOut:
+            if (lostFocus)
+                lostFocus();
+            break;
+
+        case FocusIn:
+            if (inFocus)
+                inFocus();
+            break;
+        }
+    }
 }
