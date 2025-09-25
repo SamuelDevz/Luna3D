@@ -16,6 +16,8 @@ int main()
         engine->window->Title("Window Game");
         engine->window->Icon(GetIconFile());
         engine->window->Cursor(GetCursorFile());
+        engine->window->LostFocus(Engine::Pause);
+        engine->window->InFocus(Engine::Resume);
 
         int exit = engine->Start(new WinGame());
 
@@ -38,6 +40,8 @@ int main()
     engine->window->Title("Window Game");
     engine->window->Icon(GetIconFile());
     engine->window->Cursor(GetCursorFile());
+    engine->window->LostFocus(Engine::Pause);
+    engine->window->InFocus(Engine::Resume);
 
     int exit = engine->Start(new WinGame());
 
