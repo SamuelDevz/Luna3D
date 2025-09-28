@@ -1,4 +1,5 @@
 #include "Window.h"
+#include <unistd.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 #include <X11/Xatom.h>
@@ -241,6 +242,41 @@ namespace Luna
             sizeof(hints) / sizeof(long));
     }
 
+    void SetAtoms(Display * display, XWindow window, uint32 windowMode)
+    {
+        if(windowMode == BORDERLESS)
+            Borderless(display, window);
+        else if(windowMode == FULLSCREEN)
+            Fullscreen(display, window);
+
+        auto pid = getpid();
+        Atom newWmPid = XInternAtom(display, "_NET_WM_PID", false);
+        X11ChangeProperty(display, window, 
+            newWmPid, 
+            XA_CARDINAL, 
+            reinterpret_cast<unsigned char *>(&pid), 
+            1
+        );
+
+        Atom newWmWindowType = XInternAtom(display, "_NET_WM_WINDOW_TYPE", false);
+        Atom newWmWindowTypeNormal = XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", false);
+        X11ChangeProperty(display, window, 
+            newWmWindowType,
+            XA_ATOM, 
+            reinterpret_cast<unsigned char *>(&newWmWindowTypeNormal), 
+            1
+        );
+
+        long compositor = 1;
+        Atom newWmBypassCompositor = XInternAtom(display, "_NET_WM_BYPASS_COMPOSITOR", false);
+        X11ChangeProperty(display, window, 
+            newWmBypassCompositor, 
+            XA_CARDINAL, 
+            reinterpret_cast<unsigned char *>(&compositor), 
+            1
+        );
+    }
+
     bool Window::Create() noexcept
     {
         if(!display)
@@ -289,10 +325,7 @@ namespace Luna
 
         XMapRaised(display, window);
 
-        if(windowMode == BORDERLESS)
-            Borderless(display, window);
-        else if(windowMode == FULLSCREEN)
-            Fullscreen(display, window);
+        SetAtoms(display, window, windowMode);
 
         XDefineCursor(display, window, windowCursor);
         
