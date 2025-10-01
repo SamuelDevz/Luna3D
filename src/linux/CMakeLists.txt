@@ -1,3 +1,5 @@
 if(BUILD_X11)
     add_subdirectory(Xlib)
+elseif(BUILD_XCB)
+    add_subdirectory(XCB)
 endif()
