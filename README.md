@@ -82,6 +82,7 @@ cmake --build build [Release/Debug]
 | Bibliotecas | Plataforma | Descrição | Valor |
 |:-----------:|:----------:|:---------:|:-----:|
 | `BUILD_X11` | Linux | Build the engine using Xlib. | OFF |
+| `BUILD_XCB` | Linux | Build the engine using XCB. | OFF |
 
 Para habilitar esses definições você deve habilitar no local onde está as flag(s) acima. Aqui um exemplo:
 
