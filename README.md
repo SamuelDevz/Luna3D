@@ -11,6 +11,7 @@ Luna3D/
 ├── src/                # Código-fonte (.cpp)
 │   ├── win/            # plataforma windows
 │   ├── linux/          # plataforma linux
+│   │   ├── XCB/        # biblioteca XCB
 │   │   └── Xlib/       # biblioteca Xlib
 │   └── ...             # Outras plataformas (Em breve)
 ├── examples/           # Alguns exemplos de código usando a game engine
@@ -41,6 +42,15 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 ##### XLib
 
 - X11
+- Xcursor
+- png
+
+##### XCB
+
+- xcb
+- x11-xcb
+- xcb-fixes
+- xcb-icccm
 - Xcursor
 - png
 
