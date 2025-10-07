@@ -1,5 +1,4 @@
 #include "Window.h"
-#include <iterator>
 #include <xcb/xcb_icccm.h>
 #include <unistd.h>
 #include <cstdlib>
@@ -81,24 +80,22 @@ namespace Luna
 
     void Window::Close() noexcept
     {
-        xcb_client_message_data_t data{};
-        data.data32[0] = wmDeleteWindow;
-
         xcb_client_message_event_t event{};
         event.response_type = XCB_CLIENT_MESSAGE;
         event.format = 32;
         event.window = window;
         event.type = wmProtocols;
-        event.data = data;
+        event.data.data32[0] = wmDeleteWindow;
+        event.data.data32[1] = XCB_CURRENT_TIME;
 
         xcb_send_event(
             connection, 
             false, 
             window, 
-            XCB_EVENT_MASK_NO_EVENT,
+            XCB_EVENT_MASK_NO_EVENT, 
             reinterpret_cast<const char*>(&event)
         );
-        xcb_flush(connection);
+        xcb_flush(connection); 
     }
 
     xcb_atom_t GetAtom(xcb_connection_t* connection, const string_view atom)
