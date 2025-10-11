@@ -196,5 +196,7 @@ namespace Luna
             }
             break;
         }
+
+        Window::WinProc(event);
     }
 }
