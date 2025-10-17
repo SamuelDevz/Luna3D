@@ -47,6 +47,7 @@ namespace Luna
         do
         {
             event = xcb_wait_for_event(window->Connection());
+            EngineProc(event);
             game->Update();
             game->Draw();
         } while (!Quit(event, window->WMDeleteWindow()));
@@ -56,5 +57,13 @@ namespace Luna
         game->Finalize();
 
         return 0;
+    }
+
+    void Engine::EngineProc(xcb_generic_event_t * event)
+    {
+        if (event->response_type == XCB_EXPOSE)
+            game->Display();
+
+        Input::InputProc(event);
     }
 }
