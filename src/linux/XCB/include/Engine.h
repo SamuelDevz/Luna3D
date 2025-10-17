@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.h"
+#include "Input.h"
 #include "Game.h"
 #include "Export.h"
 
@@ -13,6 +14,7 @@ namespace Luna
 
     public:
         static Window * window;
+        static Input* input;
         static Game * game;
         
         explicit Engine() noexcept;
