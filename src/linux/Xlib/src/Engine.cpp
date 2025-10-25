@@ -82,14 +82,15 @@ namespace Luna
 
         do
         {
-            XNextEvent(window->XDisplay(), &event);
-
-            if (input->XKeyPress(VK_PAUSE))
-                (paused) ? Resume() : Pause();
-            
-            EngineProc(&event);
-            game->Update();
-            game->Draw();
+            while (XPending(window->XDisplay()))
+            {
+                XNextEvent(window->XDisplay(), &event);
+                
+                if (input->XKeyPress(VK_PAUSE))
+                    (paused) ? Resume() : Pause();
+                
+                EngineProc(&event);
+            }
 
             if (!paused)
             {
