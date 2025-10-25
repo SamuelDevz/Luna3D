@@ -40,6 +40,7 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 #### XLib
 
 - X11
+- x11-fixes
 - Xcursor
 - png
 
