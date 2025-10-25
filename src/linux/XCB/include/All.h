@@ -6,5 +6,6 @@
 #include "Error.h"
 #include "Window.h"
 #include "Input.h"
+#include "Timer.h"
 #include "Game.h"
 #include "Engine.h"
