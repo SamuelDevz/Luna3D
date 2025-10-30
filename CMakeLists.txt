@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_EXAMPLES "Build examples programs" OFF)
 option(SHARED_LIBRARIES "Use the shared libs" OFF)
+option(BUILD_DIRECT3D11 "Build the engine using Direct3D 11." OFF)
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug)
@@ -20,7 +21,7 @@ add_subdirectory(src)
 
 add_library(Luna-Libraries INTERFACE)
 add_library(Luna::Libraries ALIAS Luna-Libraries)
-target_link_libraries(Luna-Libraries INTERFACE engine window)
+target_link_libraries(Luna-Libraries INTERFACE engine graphics window)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)

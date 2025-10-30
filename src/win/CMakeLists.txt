@@ -14,6 +14,9 @@ endif()
 target_include_directories(window PUBLIC include)
 target_compile_definitions(window PUBLIC $<IF:$<CONFIG:DEBUG>,_DEBUG,NDEBUG>)
 
+# graphics library
+add_subdirectory(graphics)
+
 # engine library
 if(SHARED_LIBRARIES)
     add_library(engine SHARED ${SOURCE_FILES})
@@ -22,4 +25,4 @@ else()
 endif()
 
 target_link_libraries(engine PRIVATE winmm.lib)
-target_link_libraries(engine PUBLIC window)
+target_link_libraries(engine PUBLIC window graphics)
