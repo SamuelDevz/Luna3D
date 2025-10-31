@@ -2,6 +2,8 @@
 
 #include <dxgi1_6.h>
 #include <d3d11_4.h>
+#include "Logger.h"
+#include "DebugLayer.h"
 #include "Export.h"
 #include "Window.h"
 #include "Types.h"
@@ -30,7 +32,14 @@ namespace Luna
         D3D11_VIEWPORT                viewport;
         D3D11_RECT                    scissorRect;
 
+        DebugLayer * debugLayer;
+
+        void LogHardwareInfo() noexcept;
+        void RefreshRate() noexcept;
+
     public:
+        static Logger logger;
+
         explicit Graphics() noexcept;
         ~Graphics() noexcept;
 
