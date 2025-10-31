@@ -1,5 +1,7 @@
 if(BUILD_DIRECT3D11)
     add_subdirectory(d3d11)
+elseif(BUILD_DIRECT3D12)
+    add_subdirectory(d3d12)
 else()
-    message(FATAL_ERROR "Please choose a graphics API (BUILD_DIRECT3D11).")
+    message(FATAL_ERROR "Please choose a graphics API (BUILD_DIRECT3D11 or BUILD_DIRECT3D12).")
 endif()
