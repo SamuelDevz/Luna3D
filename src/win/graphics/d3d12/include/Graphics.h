@@ -4,6 +4,7 @@
 #include <dxgi1_6.h>
 #include <d3d12.h>
 #include "Logger.h"
+#include "DebugLayer.h"
 #include "Export.h"
 #include "Window.h"
 #include "Types.h"
@@ -44,6 +45,8 @@ namespace Luna
         // sincronization
         ID3D12Fence                * fence;
         uint64                       currentFence;
+        
+        DebugLayer * debugLayer;
 
         bool WaitCommandQueue() noexcept;
         
