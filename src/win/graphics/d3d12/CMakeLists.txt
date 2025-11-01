@@ -1,4 +1,5 @@
 set(SOURCE_FILES src/Mesh.cpp
+    src/Logger.cpp
     src/Graphics.cpp)
 
 if(SHARED_LIBRARIES)

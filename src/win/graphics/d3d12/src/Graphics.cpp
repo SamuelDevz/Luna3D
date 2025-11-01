@@ -6,6 +6,8 @@ using std::format;
 
 namespace Luna
 {
+    Logger Graphics::logger;
+    
     Graphics::Graphics() noexcept
         : refreshRate{},
         backBufferCount{2},
@@ -56,6 +58,113 @@ namespace Luna
      	SafeRelease(device);
      	SafeRelease(factory);
     }
+    
+    void Graphics::LogHardwareInfo() noexcept
+    {
+        const uint32 BytesinMegaByte = 1048576U; // 1'048'576
+
+        // --------------------------------------
+        // Video adapter (GPU)
+        // --------------------------------------
+        IDXGIAdapter* adapter = nullptr;
+        if (factory->EnumAdapters(0, &adapter) != DXGI_ERROR_NOT_FOUND)
+        {
+            DXGI_ADAPTER_DESC desc;
+            adapter->GetDesc(&desc);
+            logger.OutputDebug(LOG_LEVEL_INFO, format(L"---> Video adapter GPU: {}\n", desc.Description).c_str());
+        }
+
+        IDXGIAdapter4* adapter4 = nullptr;
+        if (SUCCEEDED(adapter->QueryInterface(IID_PPV_ARGS(&adapter4))))
+        {
+            DXGI_QUERY_VIDEO_MEMORY_INFO memInfo;
+            adapter4->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &memInfo);
+
+            logger.OutputDebug(LOG_LEVEL_INFO, format("---> Video memory (free): {}MB\n", memInfo.Budget / BytesinMegaByte).c_str());
+            logger.OutputDebug(LOG_LEVEL_INFO, format("---> Video memory (used): {}MB\n", memInfo.CurrentUsage / BytesinMegaByte).c_str());
+
+            adapter4->Release();
+        }
+
+        // -----------------------------------------
+        // Maximum Feature Level supported by GPU
+        // -----------------------------------------
+        constexpr D3D_FEATURE_LEVEL featureLevels[10]
+        {
+            D3D_FEATURE_LEVEL_12_2,
+            D3D_FEATURE_LEVEL_12_1,
+            D3D_FEATURE_LEVEL_12_0,
+            D3D_FEATURE_LEVEL_11_1,
+            D3D_FEATURE_LEVEL_11_0,
+            D3D_FEATURE_LEVEL_10_1,
+            D3D_FEATURE_LEVEL_10_0,
+            D3D_FEATURE_LEVEL_9_3,
+            D3D_FEATURE_LEVEL_9_2,
+            D3D_FEATURE_LEVEL_9_1
+        };
+        
+        D3D12_FEATURE_DATA_FEATURE_LEVELS featureLevelsInfo;
+        featureLevelsInfo.NumFeatureLevels = 10;
+        featureLevelsInfo.pFeatureLevelsRequested = featureLevels;
+        
+        device->CheckFeatureSupport(
+            D3D12_FEATURE_FEATURE_LEVELS,
+            &featureLevelsInfo,
+            sizeof(featureLevelsInfo));
+
+        {
+            string text = "---> Feature Level: ";
+            switch (featureLevelsInfo.MaxSupportedFeatureLevel)
+            {
+                case D3D_FEATURE_LEVEL_12_1: text += "12_1\n"; break;
+                case D3D_FEATURE_LEVEL_12_0: text += "12_0\n"; break;
+                case D3D_FEATURE_LEVEL_11_1: text += "11_1\n"; break;
+                case D3D_FEATURE_LEVEL_11_0: text += "11_0\n"; break;
+                case D3D_FEATURE_LEVEL_10_1: text += "10_1\n"; break;
+                case D3D_FEATURE_LEVEL_10_0: text += "10_0\n"; break;
+                case D3D_FEATURE_LEVEL_9_3:  text += "9_3\n";  break;
+                case D3D_FEATURE_LEVEL_9_2:  text += "9_2\n";  break;
+                case D3D_FEATURE_LEVEL_9_1:  text += "9_1\n";  break;
+            }
+            logger.OutputDebug(LOG_LEVEL_INFO, text.c_str());
+        }
+
+        // -----------------------------------------
+        // Video output (monitor)
+        // -----------------------------------------
+
+        IDXGIOutput* output = nullptr;
+        if (adapter->EnumOutputs(0, &output) != DXGI_ERROR_NOT_FOUND)
+        {
+            DXGI_OUTPUT_DESC desc;
+            output->GetDesc(&desc);
+            logger.OutputDebug(LOG_LEVEL_INFO, format(L"---> Monitor: {}\n", desc.DeviceName).c_str());
+        }
+
+        // ------------------------------------------
+        // Video mode (resolution)
+        // ------------------------------------------
+
+        uint32 dpi { GetDpiForSystem() };
+        int32 screenWidth { GetSystemMetricsForDpi(SM_CXSCREEN, dpi) };
+        int32 screenHeight { GetSystemMetricsForDpi(SM_CYSCREEN, dpi) };
+
+        logger.OutputDebug(LOG_LEVEL_INFO,
+            format("---> Resolution: {}x{} {}Hz\n",
+                screenWidth, screenHeight, refreshRate).c_str()
+        );
+
+        SafeRelease(adapter);
+        SafeRelease(output);
+    }
+
+    void Graphics::RefreshRate() noexcept
+    {
+        DEVMODE devMode{};
+        devMode.dmSize = sizeof(DEVMODE);
+        EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &devMode);
+        refreshRate = devMode.dmDisplayFrequency;
+    }
 
     void Graphics::Initialize(const Window * const window)
     {
@@ -88,9 +197,15 @@ namespace Luna
     			IID_PPV_ARGS(&device)));
 
     		warp->Release();
-
-    		OutputDebugString("---> Using WARP Adapter: D3D12 is not supported.\n");
+        
+            logger.OutputDebug(LOG_LEVEL_DEBUG, "---> Using WARP Adapter: D3D12 is not supported.\n");
     	}
+     
+        RefreshRate();
+    
+    #ifdef _DEBUG
+        LogHardwareInfo();
+    #endif
 
         // ---------------------------------------------------
     	// Create queue, commandlist and commandListAlloc

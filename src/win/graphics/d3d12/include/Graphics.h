@@ -3,6 +3,7 @@
 #include <dxgi1_4.h>
 #include <dxgi1_6.h>
 #include <d3d12.h>
+#include "Logger.h"
 #include "Export.h"
 #include "Window.h"
 #include "Types.h"
@@ -45,8 +46,13 @@ namespace Luna
         uint64                       currentFence;
 
         bool WaitCommandQueue() noexcept;
+        
+        void LogHardwareInfo() noexcept;
+        void RefreshRate() noexcept;
 
     public:
+        static Logger logger;
+        
         explicit Graphics() noexcept;
         ~Graphics() noexcept;
 

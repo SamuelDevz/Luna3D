@@ -7,6 +7,7 @@
 #include "Timer.h"
 #include "Window.h"
 #include "Input.h"
+#include "Logger.h"
 #include "Graphics.h"
 #include "Game.h"
 #include "Engine.h"
