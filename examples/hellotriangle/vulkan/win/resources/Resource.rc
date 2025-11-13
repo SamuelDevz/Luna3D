@@ -1,0 +1,4 @@
+#include "Resources.h"
+
+IDI_ICON		ICON		"Icon.ico"
+IDC_CURSOR		CURSOR		"Cursor.cur"
