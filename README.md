@@ -58,6 +58,11 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 
 **OBS:** Tu precisa do arquivo no formato Xcursor para mudar o cursor da janela. Uma dica seria pegar um arquivo .CUR e converte-lo usando [win2xcur](https://github.com/quantum5/win2xcur)
 
+### Vulkan
+
+- [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
+    - GLM Headers
+
 ### Configuração e Construção do projeto
 
 1. Clone o repositório.
@@ -76,17 +81,18 @@ cmake --build build [Release/Debug]
 
 ### Definições de pré-processador
 
-| Opções do CMake | Descrição | Valor |
-|:---------------:|:---------:|:-----:|
-| `BUILD_EXAMPLES` | Build examples of the project. | OFF |
-| `SHARED_LIBRARIES` | Use the shared libs in the project. | OFF |
+| Opções do CMake    | Descrição                           | Valor|
+|:------------------:|:-----------------------------------:|:----:|
+| `BUILD_EXAMPLES`   | Build examples of the project.      | OFF  |
+| `SHARED_LIBRARIES` | Use the shared libs in the project. | OFF  |
 
-| Bibliotecas | Plataforma | Descrição | Valor |
-|:-----------:|:----------:|:---------:|:-----:|
-| `BUILD_X11` | Linux | Build the engine using Xlib. | OFF |
-| `BUILD_XCB` | Linux | Build the engine using XCB. | OFF |
-| `BUILD_DIRECT3D11` | Windows | Build the engine using Direct3D 11. | OFF |
-| `BUILD_DIRECT3D12` | Windows | Build the engine using Direct3D 12. | OFF |
+| Bibliotecas        | Plataforma      | Descrição                           | Valor |
+|:------------------:|:---------------:|:-----------------------------------:|:-----:|
+| `BUILD_X11`        | Linux           | Build the engine using Xlib.        | OFF   |
+| `BUILD_XCB`        | Linux           | Build the engine using XCB.         | OFF   |
+| `BUILD_DIRECT3D11` | Windows         | Build the engine using Direct3D 11. | OFF   |
+| `BUILD_DIRECT3D12` | Windows         | Build the engine using Direct3D 12. | OFF   |
+| `BUILD_VULKAN`     | Windows / Linux | Build the engine using Vulkan.      | OFF   |
 
 Para habilitar esses definições você deve habilitar no local onde está as flag(s) acima. Aqui um exemplo:
 
