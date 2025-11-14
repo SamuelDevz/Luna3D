@@ -20,6 +20,8 @@ namespace Luna
 
     Renderer::~Renderer()
     {
+        graphics->ResetCommands();
+
         vkDestroyBuffer(graphics->Device(), vertexBuffer, nullptr);
         vkFreeMemory(graphics->Device(), vertexBufferMemory, nullptr);
         

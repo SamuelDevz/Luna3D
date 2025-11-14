@@ -35,6 +35,35 @@ namespace Luna
         buffers = new SwapchainBuffer[backBufferCount] {};
     }
 
+    Graphics::~Graphics() noexcept
+    {
+        vkDeviceWaitIdle(device);
+
+        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+        vkDestroyFence(device, fence, nullptr);
+
+        for (uint32 i = 0; i < backBufferCount; ++i)
+        {
+            vkDestroyFramebuffer(device, buffers[i].framebuffer, nullptr);
+            vkDestroyImageView(device, buffers[i].view, nullptr);
+        }
+
+        delete[] buffers;
+
+        VkCommandBuffer commandBuffers[]{ commandBuffer };
+        vkFreeCommandBuffers(device, commandPool, 1, commandBuffers);
+        vkDestroyCommandPool(device, commandPool, nullptr);
+
+        vkDestroyRenderPass(device, renderPass, nullptr);
+
+        vkDestroySwapchainKHR(device, swapchain, nullptr);
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+
+        vkDestroyDevice(device, nullptr);
+        vkDestroyInstance(instance, nullptr);
+    }
+
     static bool CheckExtensionSupported(const vector<VkExtensionProperties> extensions, const string_view requestExtension)
     {
         return std::ranges::find_if(extensions,
@@ -214,35 +243,6 @@ namespace Luna
             format("---> Resolution: {}x{} {}Hz\n", 
                 screenWidth, screenHeight, refreshRate)
         );
-    }
-
-    Graphics::~Graphics() noexcept
-    {
-        delete[] buffers;
-        
-        vkDeviceWaitIdle(device);
-
-        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-        vkDestroyFence(device, fence, nullptr);
-
-        for (uint32 i = 0; i < backBufferCount; ++i)
-        {
-            vkDestroyFramebuffer(device, buffers[i].framebuffer, nullptr);
-            vkDestroyImageView(device, buffers[i].view, nullptr);
-        }
-
-        vkDestroyRenderPass(device, renderPass, nullptr);
-
-        VkCommandBuffer commandBuffers[]{ commandBuffer };
-        vkFreeCommandBuffers(device, commandPool, 1, commandBuffers);
-        vkDestroyCommandPool(device, commandPool, nullptr);
-
-        vkDestroySwapchainKHR(device, swapchain, nullptr);
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-
-        vkDestroyDevice(device, nullptr);
-        vkDestroyInstance(instance, nullptr);
     }
 
     void Graphics::Initialize(const Window* const window)
@@ -566,6 +566,8 @@ namespace Luna
 
     void Graphics::ResetCommands() const noexcept
     {
+        vkWaitForFences(device, 1, &fence, true, UINT64_MAX);
+        vkResetFences(device, 1, &fence);
         vkResetCommandBuffer(commandBuffer, 0);
     }
 
@@ -698,13 +700,6 @@ namespace Luna
         VkThrowIfFailed(vkMapMemory(device, bufferMemory, 0, size, 0, &data));
         CopyMemory(data, vertices, size);
         vkUnmapMemory(device, bufferMemory);
-
-        VkMappedMemoryRange range{};
-        range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-        range.memory = bufferMemory;
-        range.offset = 0;
-        range.size = size;
-        vkFlushMappedMemoryRanges(device, 1, &range);
     }
 
     void Graphics::Copy(VkBuffer destination, VkBuffer source, VkDeviceSize size)
