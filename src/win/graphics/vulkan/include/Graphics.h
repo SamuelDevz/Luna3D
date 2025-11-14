@@ -2,6 +2,7 @@
 
 #include "Types.h"
 #include "Export.h"
+#include "Logger.h"
 #include "Window.h"
 #include <vulkan/vulkan.h>
 
@@ -44,8 +45,11 @@ namespace Luna
         VkFence                      fence;
 
         bool WaitCommandQueue() noexcept;
+        void LogHardwareInfo();
 
     public:
+        static Logger logger;
+        
         explicit Graphics() noexcept;
         ~Graphics() noexcept;
 
