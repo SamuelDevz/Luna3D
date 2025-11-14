@@ -97,7 +97,7 @@ cmake --build build [Release/Debug]
 Para habilitar esses definições você deve habilitar no local onde está as flag(s) acima. Aqui um exemplo:
 
 ```bash
-cmake -B build -DBUILD_EXAMPLES=ON
+cmake -B build -DBUILD_EXAMPLES=ON -DBUILD_DIRECT3D12=ON
 cmake --build build
 ```
 
