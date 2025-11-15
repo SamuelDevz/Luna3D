@@ -4,6 +4,7 @@
 #include "Export.h"
 #include "Logger.h"
 #include "Window.h"
+#include "ValidationLayer.h"
 #include <vulkan/vulkan.h>
 
 namespace Luna
@@ -46,6 +47,8 @@ namespace Luna
 
         bool WaitCommandQueue() noexcept;
         void LogHardwareInfo();
+
+        ValidationLayer * validationlayer;
 
     public:
         static Logger logger;

@@ -33,6 +33,7 @@ namespace Luna
         scissorRect{}
     {
         buffers = new SwapchainBuffer[backBufferCount] {};
+        validationlayer = new ValidationLayer();
     }
 
     Graphics::~Graphics() noexcept
@@ -60,6 +61,8 @@ namespace Luna
         vkDestroySwapchainKHR(device, swapchain, nullptr);
         vkDestroySurfaceKHR(instance, surface, nullptr);
 
+        SafeDelete(validationlayer);
+        
         vkDestroyDevice(device, nullptr);
         vkDestroyInstance(instance, nullptr);
     }
@@ -261,7 +264,6 @@ namespace Luna
             VK_KHR_SURFACE_EXTENSION_NAME,
             VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
         #ifdef _DEBUG
-            VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
             VK_EXT_DEBUG_UTILS_EXTENSION_NAME
         #endif
         };
@@ -282,10 +284,19 @@ namespace Luna
         instanceInfo.pApplicationInfo = &applicationInfo;
         instanceInfo.enabledExtensionCount = Countof(instanceExtensions);
         instanceInfo.ppEnabledExtensionNames = instanceExtensions;
+        instanceInfo.enabledLayerCount = 0;
+        instanceInfo.ppEnabledLayerNames = nullptr;
+
+    #ifdef _DEBUG
         instanceInfo.enabledLayerCount = Countof(instanceLayers);
         instanceInfo.ppEnabledLayerNames = instanceLayers;
+    #endif
 
         VkThrowIfFailed(vkCreateInstance(&instanceInfo, nullptr, &instance));
+    
+    #ifdef _DEBUG
+        validationlayer->Initialize(instance, &logger);
+    #endif
 
         // ---------------------------------------------------
         // Physical Device
