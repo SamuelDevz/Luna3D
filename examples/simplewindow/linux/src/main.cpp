@@ -4,7 +4,7 @@
 int main()
 {
     using namespace Luna;
-
+/*
 #ifdef _DEBUG
 
     try
@@ -32,16 +32,16 @@ int main()
     }
 
 #else
-
+*/
     Engine * engine = new Engine();
     engine->window->Mode(WINDOWED);
     engine->window->Size(800, 600);
-    engine->window->Color("#007acc");
+    // engine->window->Color("#007acc");
     engine->window->Title("Window Game");
-    engine->window->Icon(GetIconFile());
-    engine->window->Cursor(GetCursorFile());
-    engine->window->LostFocus(Engine::Pause);
-    engine->window->InFocus(Engine::Resume);
+    // engine->window->Icon(GetIconFile());
+    // engine->window->Cursor(GetCursorFile());
+    // engine->window->LostFocus(Engine::Pause);
+    // engine->window->InFocus(Engine::Resume);
 
     int exit = engine->Start(new WinGame());
 
@@ -49,5 +49,5 @@ int main()
 
     return exit;
 
-#endif
+// #endif
 }

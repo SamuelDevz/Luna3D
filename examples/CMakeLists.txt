@@ -1,2 +1,2 @@
 add_subdirectory(simplewindow)
-add_subdirectory(hellotriangle)
+#add_subdirectory(hellotriangle)

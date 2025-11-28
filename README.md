@@ -12,7 +12,8 @@ Luna3D/
 │   ├── win/            # plataforma windows
 │   ├── linux/          # plataforma linux
 │   │   ├── XCB/        # biblioteca XCB
-│   │   └── Xlib/       # biblioteca Xlib
+│   │   ├── Xlib/       # biblioteca Xlib
+│   │   └── Wayland/    # biblioteca Wayland
 │   └── ...             # Outras plataformas (Em breve)
 ├── examples/           # Alguns exemplos de código usando a game engine
 │   ├── simplewindow/   # Cria um simples janela
@@ -58,6 +59,12 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 
 **OBS:** Tu precisa do arquivo no formato Xcursor para mudar o cursor da janela. Uma dica seria pegar um arquivo .CUR e converte-lo usando [win2xcur](https://github.com/quantum5/win2xcur)
 
+#### Wayland
+
+- wayland-client
+- wayland-cursor
+- wayland-protocols
+
 ### Vulkan
 
 - [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
@@ -90,6 +97,7 @@ cmake --build build [Release/Debug]
 |:------------------:|:---------------:|:-----------------------------------:|:-----:|
 | `BUILD_X11`        | Linux           | Build the engine using Xlib.        | OFF   |
 | `BUILD_XCB`        | Linux           | Build the engine using XCB.         | OFF   |
+| `BUILD_WAYLAND`    | Linux           | Build the engine using Wayland.     | OFF   |
 | `BUILD_DIRECT3D11` | Windows         | Build the engine using Direct3D 11. | OFF   |
 | `BUILD_DIRECT3D12` | Windows         | Build the engine using Direct3D 12. | OFF   |
 | `BUILD_VULKAN`     | Windows / Linux | Build the engine using Vulkan.      | OFF   |
