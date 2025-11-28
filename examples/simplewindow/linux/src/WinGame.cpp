@@ -8,8 +8,8 @@ namespace Luna
 
     void WinGame::Update()
     {
-        if(input->KeyDown(VK_ESCAPE))
-            window->Close();
+        // if(input->KeyDown(VK_ESCAPE))
+        //     window->Close();
     }
 
     void WinGame::Display()

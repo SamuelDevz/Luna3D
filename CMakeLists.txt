@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5...4.1)
-project(Luna3D LANGUAGES CXX)
+project(Luna3D LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,13 +17,14 @@ endif()
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     option(BUILD_X11 "Build the engine using Xlib" OFF)
     option(BUILD_XCB "Build the engine using XCB" OFF)
+    option(BUILD_WAYLAND "Build the engine using WAYLAND" OFF)
 endif ()
 
 add_subdirectory(src)
 
 add_library(Luna-Libraries INTERFACE)
 add_library(Luna::Libraries ALIAS Luna-Libraries)
-target_link_libraries(Luna-Libraries INTERFACE engine graphics window)
+target_link_libraries(Luna-Libraries INTERFACE engine window)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
