@@ -64,6 +64,7 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 - wayland-client
 - wayland-cursor
 - wayland-protocols
+- pkg-config
 
 ### Vulkan
 
