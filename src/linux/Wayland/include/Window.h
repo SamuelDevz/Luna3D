@@ -10,20 +10,6 @@ namespace Luna
 {
     enum WindowModes { FULLSCREEN, WINDOWED, BORDERLESS };
 
-    struct State
-    {
-        wl_display *wl_display;
-        wl_registry *wl_registry;
-        
-        static wl_compositor *wl_compositor;
-        static xdg_wm_base *xdg_wm_base;
-        static wl_shm * shm;
-        
-        wl_surface * window;
-        xdg_surface *xdg_surface;
-        xdg_toplevel *xdg_toplevel;
-    };
-
     class DLL Window
     {
     private:

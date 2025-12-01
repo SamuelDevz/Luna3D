@@ -26,7 +26,7 @@ namespace Luna
         return Loop();
     }
 
-    void Engine::Quit(void *data, struct xdg_toplevel *toplevel) 
+    void Engine::Quit(void *data, xdg_toplevel *toplevel)
     {
         quit = true;
     }

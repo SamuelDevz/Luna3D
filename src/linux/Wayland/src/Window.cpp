@@ -63,14 +63,49 @@ namespace Luna
     {
     }
 
+    /******************************/
+    /******XDG Window Manager******/
+    /******************************/
+
     static void xdg_wm_base_ping(void *data, xdg_wm_base *wm_base, uint32_t serial)
     {
         xdg_wm_base_pong(wm_base, serial);
     }
 
+    /******************************/
+    /*********XDG Surface**********/
+    /******************************/
+
+    static void surface_configure(void *data, xdg_surface *xdg_surface, uint32_t serial) 
+    {
+        xdg_surface_ack_configure(xdg_surface, serial);
+    }
+
+    /******************************/
+    /********XDG Toplevel**********/
+    /******************************/
+
+    static void toplevel_configure(void *data, xdg_toplevel *toplevel,
+        int32_t width, int32_t height, wl_array *states)
+    {
+    }
+
+    static void toplevel_configure_bounds(void *data, xdg_toplevel *xdg_toplevel,
+        int32_t width, int32_t height)
+    {
+    }
+
+    static void toplevel_wm_capabilities(void *data, xdg_toplevel *xdg_toplevel, 
+        wl_array *capabilities)
+    {
+    }
+
+    /******************************/
+    /***********Registry***********/
+    /******************************/
+
     void Window::registry_handle_global(void *data, wl_registry *registry,
-        uint32_t id, const char *interface,
-        uint32_t version)
+        uint32_t id, const char *interface, uint32_t version)
     {
         static const xdg_wm_base_listener xdg_wm_base_listener = {
             .ping = xdg_wm_base_ping,
@@ -93,12 +128,6 @@ namespace Luna
     }
 
     static void registry_global_remove(void *data, wl_registry *registry, uint32_t id) {}
-
-    static void toplevel_configure(void *data, struct xdg_toplevel *toplevel,
-        int32_t width, int32_t height,
-        struct wl_array *states)
-    {
-    }
 
     wl_buffer* CreateShmBuffer(int32 width, int32 height, uint32 color, wl_shm * shm)
     {
@@ -147,17 +176,32 @@ namespace Luna
         wl_registry_add_listener(registry, &registry_listener, nullptr);
         wl_display_roundtrip(display);
 
+        static const xdg_surface_listener xdg_surface_listener = {
+            .configure = surface_configure
+        };
+
         window = wl_compositor_create_surface(compositor);
         xdgSurface = xdg_wm_base_get_xdg_surface(wm_base, window);
+        xdg_surface_add_listener(xdgSurface, &xdg_surface_listener, window);
+        wl_display_roundtrip(display);
+
         xdgToplevel = xdg_surface_get_toplevel(xdgSurface);
 
         toplevel_listener = new xdg_toplevel_listener{
             .configure = toplevel_configure,
-            // .close = nullptr
+            .configure_bounds = toplevel_configure_bounds,
+            .wm_capabilities = toplevel_wm_capabilities
         };
-        
+
         xdg_toplevel_add_listener(xdgToplevel, toplevel_listener, nullptr);
         xdg_toplevel_set_title(xdgToplevel, windowTitle.c_str());
+        xdg_toplevel_set_app_id(xdgToplevel, windowTitle.c_str());
+
+        xdg_toplevel_set_max_size(xdgToplevel, 1920, 1080);
+        xdg_toplevel_set_min_size(xdgToplevel, windowWidth, windowHeight);
+
+        if(windowMode == FULLSCREEN)
+            xdg_toplevel_set_fullscreen(xdgToplevel, nullptr);
 
         wl_surface_commit(window);
         wl_display_roundtrip(display);
