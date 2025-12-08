@@ -35,6 +35,7 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 ### Windows
 
 - [Windows 10 SDK](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads)
+- Graphics Tools
 
 ### Linux
 
