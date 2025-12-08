@@ -10,7 +10,7 @@ namespace Luna
     class DebugLayer
     {
     private:
-        ID3D12Debug5 * debugController;
+        ID3D12Debug * debugController;
         ID3D12DebugDevice* debugDevice;
         IDXGIDebug1 * dxgiDebug;
         IDXGIInfoQueue * dxgiInfoQueue;

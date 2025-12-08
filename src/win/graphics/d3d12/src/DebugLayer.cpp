@@ -48,7 +48,6 @@ namespace Luna
     #ifdef _DEBUG
         ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))
         debugController->EnableDebugLayer();
-        debugController->SetEnableGPUBasedValidation(true);
     #endif
     }
 
