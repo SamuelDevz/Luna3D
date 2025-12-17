@@ -176,12 +176,12 @@ namespace Luna
         wl_registry_add_listener(registry, &registry_listener, nullptr);
         wl_display_roundtrip(display);
 
+        window = wl_compositor_create_surface(compositor);
+        xdgSurface = xdg_wm_base_get_xdg_surface(wm_base, window);
+        
         static const xdg_surface_listener xdg_surface_listener = {
             .configure = surface_configure
         };
-
-        window = wl_compositor_create_surface(compositor);
-        xdgSurface = xdg_wm_base_get_xdg_surface(wm_base, window);
         xdg_surface_add_listener(xdgSurface, &xdg_surface_listener, window);
         wl_display_roundtrip(display);
 
@@ -200,6 +200,8 @@ namespace Luna
         xdg_toplevel_set_max_size(xdgToplevel, 1920, 1080);
         xdg_toplevel_set_min_size(xdgToplevel, windowWidth, windowHeight);
 
+        xdg_surface_set_window_geometry(xdgSurface, windowPosX, -windowPosY, windowWidth, windowHeight);
+
         if(windowMode == FULLSCREEN)
             xdg_toplevel_set_fullscreen(xdgToplevel, nullptr);
 
@@ -209,7 +211,6 @@ namespace Luna
         constexpr const uint32 color = 0xff007acc;
         wl_buffer * buffer = CreateShmBuffer(windowWidth, windowHeight, color, shm);
 
-        wl_surface_commit(window);
         wl_surface_attach(window, buffer, 0, 0);
         wl_surface_commit(window);
 
