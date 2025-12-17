@@ -13,7 +13,6 @@ namespace Luna
     class DLL Window
     {
     private:
-    
         wl_display*           display;
         wl_registry *         registry;
         wl_surface *          window;
@@ -39,7 +38,6 @@ namespace Luna
         static xdg_wm_base * wm_base;
         static wl_shm * shm;
         static wl_buffer * buffer;
-
         static xdg_toplevel_listener * toplevel_listener;
 
         static void registry_handle_global(
