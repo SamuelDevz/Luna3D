@@ -5,6 +5,7 @@
 #include <wayland-client.h>
 #include <wayland-cursor.h>
 #include "xdg-shell-client-protocol.h"
+#include "xdg-decoration-unstable-v1.h"
 
 namespace Luna
 {
@@ -18,7 +19,7 @@ namespace Luna
         wl_surface *          window;
         xdg_surface *         xdgSurface;
         xdg_toplevel *        xdgToplevel;
-
+        zxdg_toplevel_decoration_v1* decoration;
         int32		          windowWidth;
         int32		          windowHeight;
         // string          windowIcon;
@@ -39,12 +40,13 @@ namespace Luna
         static wl_shm * shm;
         static wl_buffer * buffer;
         static xdg_toplevel_listener * toplevel_listener;
+        static zxdg_decoration_manager_v1* deco_manager;
 
         static void registry_handle_global(
-            void *data, 
+            void *data,
             struct wl_registry *registry,
-            uint32_t name, 
-            const char *interface, 
+            uint32_t name,
+            const char *interface,
             uint32_t version);
 
     public:
@@ -136,7 +138,7 @@ namespace Luna
 
     // inline void Window::Color(const string_view hex) noexcept
     // { windowColor.pixel = GetColor(hex.data()); }
-    
+
     // inline void Window::HideCursor(const bool hide) const noexcept
     // { hide ? XFixesHideCursor(display, window) : XFixesShowCursor(display, window); }
 
