@@ -8,7 +8,7 @@ pkg_check_modules(WAYLAND REQUIRED IMPORTED_TARGET
 )
 
 # window library
-add_library(protocols STATIC src/xdg-shell-protocol.c)
+add_library(protocols STATIC src/xdg-shell-client-protocol.c)
 
 if(SHARED_LIBRARIES)
     add_library(window SHARED src/Window.cpp)
