@@ -1,5 +1,4 @@
 #include "Window.h"
-#include <cstdio>
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/mman.h>
@@ -14,13 +13,15 @@ namespace Luna
 
     xdg_toplevel_listener* Window::toplevel_listener = nullptr;
 
+    zxdg_decoration_manager_v1* Window::deco_manager = nullptr;
+
     void (*Window::inFocus)() = nullptr;
     void (*Window::lostFocus)() = nullptr;
 
     Window::Window() noexcept : windowPosX{}, windowPosY{}
     {
         display = wl_display_connect(nullptr);
-        
+
         windowWidth = 1920;
         windowHeight = 1080;
         // windowCursor = XCreateFontCursor(display, XC_left_ptr);
@@ -34,7 +35,8 @@ namespace Luna
     {
         if (buffer)
             wl_buffer_destroy(buffer);
-
+        
+        zxdg_toplevel_decoration_v1_destroy(decoration);
         xdg_toplevel_destroy(xdgToplevel);
         xdg_surface_destroy(xdgSurface);
         wl_surface_destroy(window);
@@ -43,13 +45,13 @@ namespace Luna
         wl_shm_destroy(shm);
         wl_registry_destroy(registry);
         wl_display_disconnect(display);
-        
+
         delete toplevel_listener;
     }
 
     void Window::Size(const uint32 width, const uint32 height) noexcept
-    { 
-        windowWidth = width; 
+    {
+        windowWidth = width;
         windowHeight = height;
 
         windowCenterX = windowWidth / 2;
@@ -76,7 +78,7 @@ namespace Luna
     /*********XDG Surface**********/
     /******************************/
 
-    static void surface_configure(void *data, xdg_surface *xdg_surface, uint32_t serial) 
+    static void surface_configure(void *data, xdg_surface *xdg_surface, uint32_t serial)
     {
         xdg_surface_ack_configure(xdg_surface, serial);
     }
@@ -95,7 +97,7 @@ namespace Luna
     {
     }
 
-    static void toplevel_wm_capabilities(void *data, xdg_toplevel *xdg_toplevel, 
+    static void toplevel_wm_capabilities(void *data, xdg_toplevel *xdg_toplevel,
         wl_array *capabilities)
     {
     }
@@ -125,6 +127,10 @@ namespace Luna
         {
             shm = reinterpret_cast<wl_shm *>(wl_registry_bind(registry, id, &wl_shm_interface, 1));
         }
+        else if (_interface == zxdg_decoration_manager_v1_interface.name)
+        {
+            deco_manager = reinterpret_cast<zxdg_decoration_manager_v1*>(wl_registry_bind(registry, id, &zxdg_decoration_manager_v1_interface, 1));
+        }
     }
 
     static void registry_global_remove(void *data, wl_registry *registry, uint32_t id) {}
@@ -141,18 +147,18 @@ namespace Luna
         // map it to the memory
         void * data = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
-        // change color the buffer 
+        // change color the buffer
         uint32_t *pixel = reinterpret_cast<uint32_t*>(data);
         for (uint32 i = 0; i < size / 4; ++i)
             pixel[i] = color;
 
         wl_shm_pool *pool = wl_shm_create_pool(shm, fd, size);
         wl_buffer *buffer = wl_shm_pool_create_buffer(
-            pool, 
-            0, 
-            width, 
-            height, 
-            stride, 
+            pool,
+            0,
+            width,
+            height,
+            stride,
             WL_SHM_FORMAT_XRGB8888
         );
 
@@ -178,7 +184,7 @@ namespace Luna
 
         window = wl_compositor_create_surface(compositor);
         xdgSurface = xdg_wm_base_get_xdg_surface(wm_base, window);
-        
+
         static const xdg_surface_listener xdg_surface_listener = {
             .configure = surface_configure
         };
@@ -187,7 +193,7 @@ namespace Luna
 
         xdgToplevel = xdg_surface_get_toplevel(xdgSurface);
 
-        toplevel_listener = new xdg_toplevel_listener{
+        toplevel_listener = new xdg_toplevel_listener {
             .configure = toplevel_configure,
             .configure_bounds = toplevel_configure_bounds,
             .wm_capabilities = toplevel_wm_capabilities
@@ -200,10 +206,21 @@ namespace Luna
         xdg_toplevel_set_max_size(xdgToplevel, 1920, 1080);
         xdg_toplevel_set_min_size(xdgToplevel, windowWidth, windowHeight);
 
-        xdg_surface_set_window_geometry(xdgSurface, windowPosX, -windowPosY, windowWidth, windowHeight);
-
         if(windowMode == FULLSCREEN)
             xdg_toplevel_set_fullscreen(xdgToplevel, nullptr);
+
+        if(windowMode == WINDOWED)
+        {
+            if (deco_manager)
+            {
+                decoration = zxdg_decoration_manager_v1_get_toplevel_decoration(deco_manager, xdgToplevel);
+
+                zxdg_toplevel_decoration_v1_set_mode(
+                    decoration,
+                    ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE
+                );
+            }
+        }
 
         wl_surface_commit(window);
         wl_display_roundtrip(display);
