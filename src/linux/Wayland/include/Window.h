@@ -41,6 +41,7 @@ namespace Luna
         static wl_buffer * buffer;
         static xdg_toplevel_listener * toplevel_listener;
         static zxdg_decoration_manager_v1* deco_manager;
+        static wl_output * output;
 
         static void registry_handle_global(
             void *data,

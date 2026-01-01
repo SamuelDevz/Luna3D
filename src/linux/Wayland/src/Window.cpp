@@ -10,10 +10,9 @@ namespace Luna
     xdg_wm_base * Window::wm_base = nullptr;
     wl_shm * Window::shm = nullptr;
     wl_buffer * Window::buffer = nullptr;
-
     xdg_toplevel_listener* Window::toplevel_listener = nullptr;
-
     zxdg_decoration_manager_v1* Window::deco_manager = nullptr;
+    wl_output * Window::output = nullptr;
 
     void (*Window::inFocus)() = nullptr;
     void (*Window::lostFocus)() = nullptr;
@@ -35,7 +34,8 @@ namespace Luna
     {
         if (buffer)
             wl_buffer_destroy(buffer);
-        
+
+        wl_output_destroy(output);        
         zxdg_toplevel_decoration_v1_destroy(decoration);
         xdg_toplevel_destroy(xdgToplevel);
         xdg_surface_destroy(xdgSurface);
@@ -118,6 +118,10 @@ namespace Luna
         {
             compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 4));
         }
+        else if (_interface == wl_output_interface.name) 
+        {
+            output = reinterpret_cast<wl_output*>(wl_registry_bind(registry, id, &wl_output_interface, version));
+        }
         else if (_interface == xdg_wm_base_interface.name)
         {
             wm_base = reinterpret_cast<xdg_wm_base *>(wl_registry_bind(registry, id, &xdg_wm_base_interface, 1));
@@ -168,6 +172,87 @@ namespace Luna
         return buffer;
     }
 
+    void output_geometry(void* data, wl_output *wl_output,
+        int x, int y, int physical_width,
+        int physical_height, int subpixel, const char *make,
+        const char *model, int transform) 
+    {
+        printf("=== Monitor Geometry Information ===\n");
+        printf("Position: (%d, %d)\n", x, y);
+        printf("Physical dimensions: %d x %d mm\n", physical_width, physical_height);
+        
+        const char* subpixel_str = "unknown";
+        switch(subpixel) 
+        {
+            case WL_OUTPUT_SUBPIXEL_NONE: subpixel_str = "none"; break;
+            case WL_OUTPUT_SUBPIXEL_HORIZONTAL_RGB: subpixel_str = "horizontal RGB"; break;
+            case WL_OUTPUT_SUBPIXEL_HORIZONTAL_BGR: subpixel_str = "horizontal BGR"; break;
+            case WL_OUTPUT_SUBPIXEL_VERTICAL_RGB: subpixel_str = "vertical RGB"; break;
+            case WL_OUTPUT_SUBPIXEL_VERTICAL_BGR: subpixel_str = "vertical BGR"; break;
+        }
+        printf("Subpixel: %s\n", subpixel_str);
+        
+        if (make) printf("Manufacturer: %s\n", make);
+        if (model) printf("Model: %s\n", model);
+        
+        const char* transform_str = "normal";
+        switch(transform) 
+        {
+            case WL_OUTPUT_TRANSFORM_90: transform_str = "90°"; break;
+            case WL_OUTPUT_TRANSFORM_180: transform_str = "180°"; break;
+            case WL_OUTPUT_TRANSFORM_270: transform_str = "270°"; break;
+            case WL_OUTPUT_TRANSFORM_FLIPPED: transform_str = "flipped"; break;
+            case WL_OUTPUT_TRANSFORM_FLIPPED_90: transform_str = "flipped 90°"; break;
+            case WL_OUTPUT_TRANSFORM_FLIPPED_180: transform_str = "flipped 180°"; break;
+            case WL_OUTPUT_TRANSFORM_FLIPPED_270: transform_str = "flipped 270°"; break;
+        }
+        printf("Transform: %s\n", transform_str);
+        printf("\n");
+    }
+
+    void output_mode(void *data, wl_output *wl_output,
+        uint flags, int width, int height, int refresh) 
+    {
+        printf("=== Monitor Video Mode ===\n");
+        printf("Resolution: %d x %d pixels\n", width, height);
+        printf("Refresh rate: %.2f Hz\n", refresh / 1000.0f);
+        
+        bool is_current = (flags & WL_OUTPUT_MODE_CURRENT) != 0;
+        bool is_preferred = (flags & WL_OUTPUT_MODE_PREFERRED) != 0;
+        
+        printf("Flags: ");
+        if (is_current) printf("[CURRENT] ");
+        if (is_preferred) printf("[PREFERRED] ");
+        if (!is_current && !is_preferred) printf("none");
+        printf("\n\n");
+    }
+    
+    void output_scale(void *data, wl_output *wl_output, int factor) 
+    {
+        printf("=== Monitor Scale ===\n");
+        printf("Scale factor: %d\n\n", factor);
+    }
+    
+    void output_name(void *data, wl_output *wl_output, const char *name) 
+    {
+        printf("=== Monitor Name ===\n");
+        if (name) printf("Name: %s\n\n", name);
+        else      printf("Name: not available\n\n");
+    }
+    
+    void output_description(void *data, wl_output *wl_output, const char *description) 
+    {
+        printf("=== Monitor Description ===\n");
+        if (description) printf("Description: %s\n\n", description);
+        else             printf("Description: not available\n\n");
+    }
+
+    void output_done(void *data, wl_output *wl_output) 
+    {
+        printf("=== Monitor Configuration Complete ===\n");
+        printf("All monitor information has been received.\n\n");
+    }
+
     bool Window::Create() noexcept
     {
         if(!display)
@@ -182,7 +267,18 @@ namespace Luna
         wl_registry_add_listener(registry, &registry_listener, nullptr);
         wl_display_roundtrip(display);
 
+        const wl_output_listener output_listener = {
+            .geometry = output_geometry,
+            .mode = output_mode,
+            .done = output_done,
+            .scale = output_scale,
+            .name = output_name,
+            .description = output_description,
+        };
+
+        wl_output_add_listener(output, &output_listener, nullptr);
         window = wl_compositor_create_surface(compositor);
+        // wl_surface_add_listener(window, &surface_listener, window);
         xdgSurface = xdg_wm_base_get_xdg_surface(wm_base, window);
 
         static const xdg_surface_listener xdg_surface_listener = {
