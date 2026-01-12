@@ -299,9 +299,6 @@ namespace Luna
         xdg_toplevel_set_title(xdgToplevel, windowTitle.c_str());
         xdg_toplevel_set_app_id(xdgToplevel, windowTitle.c_str());
 
-        xdg_toplevel_set_max_size(xdgToplevel, 1920, 1080);
-        xdg_toplevel_set_min_size(xdgToplevel, windowWidth, windowHeight);
-
         if(windowMode == FULLSCREEN)
             xdg_toplevel_set_fullscreen(xdgToplevel, nullptr);
 
