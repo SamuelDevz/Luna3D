@@ -24,7 +24,7 @@ namespace Luna
         int32		          windowHeight;
         // string          windowIcon;
         wl_cursor	    windowCursor;
-        // XColor	        windowColor;
+        uint32	        windowColor;
         string		    windowTitle;
         int32		    windowMode;
         int32		    windowPosX;
@@ -50,6 +50,8 @@ namespace Luna
             const char *interface,
             uint32_t version);
 
+        uint32 GetColor(const string hexColor) noexcept;
+
     public:
         explicit Window() noexcept;
         ~Window() noexcept;
@@ -66,7 +68,7 @@ namespace Luna
         int32 CenterX() const noexcept;
         int32 CenterY() const noexcept;
         string Title() const noexcept;
-        // XColor Color() const noexcept;
+        uint32 Color() const noexcept;
         float AspectRatio() const noexcept;
 
         void Icon(const string_view filename) noexcept;
@@ -119,8 +121,8 @@ namespace Luna
     inline string Window::Title() const noexcept
     { return windowTitle; }
 
-    // inline XColor Window::Color() const noexcept
-    // { return windowColor; }
+    inline uint32 Window::Color() const noexcept
+    { return windowColor; }
 
     inline float Window::AspectRatio() const noexcept
     { return windowWidth / float(windowHeight); }
@@ -137,8 +139,8 @@ namespace Luna
     inline void Window::Mode(const uint32 mode) noexcept
     { windowMode = mode; }
 
-    // inline void Window::Color(const string_view hex) noexcept
-    // { windowColor.pixel = GetColor(hex.data()); }
+    inline void Window::Color(const string_view hex) noexcept
+    { windowColor = GetColor(hex.data()); }
 
     // inline void Window::HideCursor(const bool hide) const noexcept
     // { hide ? XFixesHideCursor(display, window) : XFixesShowCursor(display, window); }

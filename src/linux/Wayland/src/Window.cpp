@@ -49,6 +49,21 @@ namespace Luna
         delete toplevel_listener;
     }
 
+    uint32 Window::GetColor(const string hexColor) noexcept
+    {
+        const string redStr = hexColor.substr(1, 2);
+        const string greenStr = hexColor.substr(3, 2);
+        const string blueStr = hexColor.substr(5, 2);
+
+        auto redLong = strtol(redStr.c_str(), nullptr, 16);
+        auto greenLong = strtol(greenStr.c_str(), nullptr, 16);
+        auto blueLong = strtol(blueStr.c_str(), nullptr, 16);
+
+        uint32 color = (redLong << 16) | (greenLong << 8) | blueLong;
+
+        return color;
+    }
+
     void Window::Size(const uint32 width, const uint32 height) noexcept
     {
         windowWidth = width;
@@ -318,9 +333,7 @@ namespace Luna
         wl_surface_commit(window);
         wl_display_roundtrip(display);
 
-        constexpr const uint32 color = 0xff007acc;
-        wl_buffer * buffer = CreateShmBuffer(windowWidth, windowHeight, color, shm);
-
+        wl_buffer * buffer = CreateShmBuffer(windowWidth, windowHeight, windowColor, shm);
         wl_surface_attach(window, buffer, 0, 0);
         wl_surface_commit(window);
 

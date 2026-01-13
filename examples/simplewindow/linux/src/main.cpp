@@ -36,7 +36,7 @@ int main()
     Engine * engine = new Engine();
     engine->window->Mode(WINDOWED);
     engine->window->Size(800, 600);
-    // engine->window->Color("#007acc");
+    engine->window->Color("#007acc");
     engine->window->Title("Window Game");
     // engine->window->Icon(GetIconFile());
     // engine->window->Cursor(GetCursorFile());
