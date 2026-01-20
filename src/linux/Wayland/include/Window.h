@@ -64,11 +64,11 @@ namespace Luna
         static void (*lostFocus)();
 
         static wl_compositor *compositor;
-        static xdg_wm_base * wm_base;
+        static xdg_wm_base * wmBase;
         static wl_shm * shm;
         static wl_buffer * buffer;
-        static xdg_toplevel_listener * toplevel_listener;
-        static zxdg_decoration_manager_v1* deco_manager;
+        static xdg_toplevel_listener * toplevelListener;
+        static zxdg_decoration_manager_v1* decoManager;
         static wl_output * output;
         static OutputInfo * monitor;
 
@@ -94,7 +94,7 @@ namespace Luna
             
         static void OutputHandleDone(void *data, wl_output *wl_output);
 
-        static void registry_handle_global(
+        static void RegistryHandleGlobal(
             void *data,
             struct wl_registry *registry,
             uint32_t name,
@@ -152,7 +152,7 @@ namespace Luna
     { return xdgToplevel; }
 
     inline xdg_wm_base* Window::WMBase() const noexcept
-    { return wm_base; }
+    { return wmBase; }
 
     inline int32 Window::Width() const noexcept
     { return windowWidth; }
@@ -203,5 +203,5 @@ namespace Luna
     { lostFocus = func; }
 
     inline xdg_toplevel_listener* Window::XDGTopLevelListener() noexcept
-    { return toplevel_listener; }
+    { return toplevelListener; }
 }

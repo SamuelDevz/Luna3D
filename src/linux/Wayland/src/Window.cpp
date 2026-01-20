@@ -7,11 +7,11 @@
 namespace Luna
 {
     wl_compositor * Window::compositor = nullptr;
-    xdg_wm_base * Window::wm_base = nullptr;
+    xdg_wm_base * Window::wmBase = nullptr;
     wl_shm * Window::shm = nullptr;
     wl_buffer * Window::buffer = nullptr;
-    xdg_toplevel_listener* Window::toplevel_listener = nullptr;
-    zxdg_decoration_manager_v1* Window::deco_manager = nullptr;
+    xdg_toplevel_listener* Window::toplevelListener = nullptr;
+    zxdg_decoration_manager_v1* Window::decoManager = nullptr;
     wl_output * Window::output = nullptr;
     OutputInfo * Window::monitor = nullptr;
 
@@ -35,20 +35,20 @@ namespace Luna
     {
         if (buffer)
             wl_buffer_destroy(buffer);
-
-        delete monitor;
+        
         wl_output_destroy(output);    
         zxdg_toplevel_decoration_v1_destroy(decoration);
         xdg_toplevel_destroy(xdgToplevel);
         xdg_surface_destroy(xdgSurface);
         wl_surface_destroy(window);
-        xdg_wm_base_destroy(wm_base);
+        xdg_wm_base_destroy(wmBase);
         wl_compositor_destroy(compositor);
         wl_shm_destroy(shm);
         wl_registry_destroy(registry);
         wl_display_disconnect(display);
 
-        delete toplevel_listener;
+        delete monitor;
+        delete toplevelListener;
     }
 
     uint32 Window::GetColor(const string hexColor) noexcept
@@ -86,35 +86,35 @@ namespace Luna
     /******XDG Window Manager******/
     /******************************/
 
-    static void xdg_wm_base_ping(void *data, xdg_wm_base *wm_base, uint32_t serial)
+    static void XdgWmBasePing(void *data, xdg_wm_base *base, uint32_t serial)
     {
-        xdg_wm_base_pong(wm_base, serial);
+        xdg_wm_base_pong(base, serial);
     }
 
     /******************************/
     /*********XDG Surface**********/
     /******************************/
 
-    static void surface_configure(void *data, xdg_surface *xdg_surface, uint32_t serial)
+    static void SurfaceConfigure(void *data, xdg_surface *surface, uint32_t serial)
     {
-        xdg_surface_ack_configure(xdg_surface, serial);
+        xdg_surface_ack_configure(surface, serial);
     }
 
     /******************************/
     /********XDG Toplevel**********/
     /******************************/
 
-    static void toplevel_configure(void *data, xdg_toplevel *toplevel,
+    static void ToplevelConfigure(void *data, xdg_toplevel *toplevel,
         int32_t width, int32_t height, wl_array *states)
     {
     }
 
-    static void toplevel_configure_bounds(void *data, xdg_toplevel *xdg_toplevel,
+    static void ToplevelConfigureBounds(void *data, xdg_toplevel *toplevel,
         int32_t width, int32_t height)
     {
     }
 
-    static void toplevel_wm_capabilities(void *data, xdg_toplevel *xdg_toplevel,
+    static void ToplevelWmCapabilities(void *data, xdg_toplevel *toplevel,
         wl_array *capabilities)
     {
     }
@@ -123,38 +123,38 @@ namespace Luna
     /***********Registry***********/
     /******************************/
 
-    void Window::registry_handle_global(void *data, wl_registry *registry,
+    void Window::RegistryHandleGlobal(void *data, wl_registry *registry,
         uint32_t id, const char *interface, uint32_t version)
     {
-        static const xdg_wm_base_listener xdg_wm_base_listener = {
-            .ping = xdg_wm_base_ping,
+        static const xdg_wm_base_listener wmBaseListener = {
+            .ping = XdgWmBasePing,
         };
 
-        const string _interface(interface);
-        if (_interface == wl_compositor_interface.name)
+        const string iface(interface);
+        if (iface == wl_compositor_interface.name)
         {
             compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 4));
         }
-        else if (_interface == wl_output_interface.name) 
+        else if (iface == wl_output_interface.name)
         {
             output = reinterpret_cast<wl_output*>(wl_registry_bind(registry, id, &wl_output_interface, version));
         }
-        else if (_interface == xdg_wm_base_interface.name)
+        else if (iface == xdg_wm_base_interface.name)
         {
-            wm_base = reinterpret_cast<xdg_wm_base *>(wl_registry_bind(registry, id, &xdg_wm_base_interface, 1));
-            xdg_wm_base_add_listener(wm_base, &xdg_wm_base_listener, nullptr);
+            wmBase = reinterpret_cast<xdg_wm_base *>(wl_registry_bind(registry, id, &xdg_wm_base_interface, 1));
+            xdg_wm_base_add_listener(wmBase, &wmBaseListener, nullptr);
         }
-        else if (_interface == wl_shm_interface.name)
+        else if (iface == wl_shm_interface.name)
         {
             shm = reinterpret_cast<wl_shm *>(wl_registry_bind(registry, id, &wl_shm_interface, 1));
         }
-        else if (_interface == zxdg_decoration_manager_v1_interface.name)
+        else if (iface == zxdg_decoration_manager_v1_interface.name)
         {
-            deco_manager = reinterpret_cast<zxdg_decoration_manager_v1*>(wl_registry_bind(registry, id, &zxdg_decoration_manager_v1_interface, 1));
+            decoManager = reinterpret_cast<zxdg_decoration_manager_v1*>(wl_registry_bind(registry, id, &zxdg_decoration_manager_v1_interface, 1));
         }
     }
 
-    static void registry_global_remove(void *data, wl_registry *registry, uint32_t id) {}
+    static void RegistryGlobalRemove(void *data, wl_registry *registry, uint32_t id) {}
 
     wl_buffer* CreateShmBuffer(int32 width, int32 height, uint32 color, wl_shm * shm)
     {
@@ -203,9 +203,9 @@ namespace Luna
         // monitor->DUMMYUNIONNAME.DUMMYSTRUCTNAME2.displayOrientation = transform;
     }
 
-    static int32 euclid(const int32 a, const int32 b)
+    static int32 Euclid(int32 a, int32 b)
     {
-        return b ? euclid(b, a % b) : a;
+        return b ? Euclid(b, a % b) : a;
     }
 
     void Window::OutputHandleMode(void *data, wl_output *wl_output,
@@ -266,7 +266,7 @@ namespace Luna
             default: printf("None mode: ");
         }
 
-        const int32 gcd = euclid(monitor->resolution.width, monitor->resolution.height);
+        const int32 gcd = Euclid(monitor->resolution.width, monitor->resolution.height);
 
         printf("%d x %d (%d:%d) %dHz\n", 
             monitor->resolution.width, 
@@ -318,18 +318,18 @@ namespace Luna
         if(!display)
             return false;
 
-        const wl_registry_listener registry_listener = {
-            .global = registry_handle_global,
-            .global_remove = registry_global_remove,
+        const wl_registry_listener registryListener = {
+            .global = RegistryHandleGlobal,
+            .global_remove = RegistryGlobalRemove,
         };
 
         registry = wl_display_get_registry(display);
-        wl_registry_add_listener(registry, &registry_listener, nullptr);
+        wl_registry_add_listener(registry, &registryListener, nullptr);
         wl_display_roundtrip(display);
 
         monitor = new OutputInfo;
 
-        const wl_output_listener output_listener = {
+        const wl_output_listener outputListener = {
             .geometry = OutputHandleGeometry,
             .mode = OutputHandleMode,
             .done = OutputHandleDone,
@@ -338,26 +338,26 @@ namespace Luna
             .description = OutputHandleDescription,
         };
 
-        wl_output_add_listener(output, &output_listener, nullptr);
+        wl_output_add_listener(output, &outputListener, nullptr);
         window = wl_compositor_create_surface(compositor);
         // wl_surface_add_listener(window, &surface_listener, window);
-        xdgSurface = xdg_wm_base_get_xdg_surface(wm_base, window);
+        xdgSurface = xdg_wm_base_get_xdg_surface(wmBase, window);
 
-        static const xdg_surface_listener xdg_surface_listener = {
-            .configure = surface_configure
+        static const xdg_surface_listener xdgSurfaceListener = {
+            .configure = SurfaceConfigure
         };
-        xdg_surface_add_listener(xdgSurface, &xdg_surface_listener, window);
+        xdg_surface_add_listener(xdgSurface, &xdgSurfaceListener, window);
         wl_display_roundtrip(display);
 
         xdgToplevel = xdg_surface_get_toplevel(xdgSurface);
 
-        toplevel_listener = new xdg_toplevel_listener {
-            .configure = toplevel_configure,
-            .configure_bounds = toplevel_configure_bounds,
-            .wm_capabilities = toplevel_wm_capabilities
+        toplevelListener = new xdg_toplevel_listener {
+            .configure = ToplevelConfigure,
+            .configure_bounds = ToplevelConfigureBounds,
+            .wm_capabilities = ToplevelWmCapabilities
         };
 
-        xdg_toplevel_add_listener(xdgToplevel, toplevel_listener, nullptr);
+        xdg_toplevel_add_listener(xdgToplevel, toplevelListener, nullptr);
         xdg_toplevel_set_title(xdgToplevel, windowTitle.c_str());
         xdg_toplevel_set_app_id(xdgToplevel, windowTitle.c_str());
 
@@ -366,9 +366,9 @@ namespace Luna
 
         if(windowMode == WINDOWED)
         {
-            if (deco_manager)
+            if (decoManager)
             {
-                decoration = zxdg_decoration_manager_v1_get_toplevel_decoration(deco_manager, xdgToplevel);
+                decoration = zxdg_decoration_manager_v1_get_toplevel_decoration(decoManager, xdgToplevel);
 
                 zxdg_toplevel_decoration_v1_set_mode(
                     decoration,
