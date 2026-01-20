@@ -50,8 +50,6 @@ namespace Luna
         zxdg_toplevel_decoration_v1* decoration;
         int32		          windowWidth;
         int32		          windowHeight;
-        // string          windowIcon;
-        wl_cursor	    windowCursor;
         uint32	        windowColor;
         string		    windowTitle;
         int32		    windowMode;
@@ -129,7 +127,7 @@ namespace Luna
         void Mode(const uint32 mode) noexcept;
         void Color(const string_view hex) noexcept;
 
-        void HideCursor(const bool hide) const noexcept;
+        // void HideCursor(const bool hide) const noexcept;
         void Close() noexcept;
         bool Create() noexcept;
 
@@ -178,11 +176,11 @@ namespace Luna
     inline float Window::AspectRatio() const noexcept
     { return windowWidth / float(windowHeight); }
 
-    // inline void Window::Icon(const string_view filename) noexcept
-    // { windowIcon = filename; }
+    inline void Window::Icon(const string_view filename) noexcept
+    {}
 
-    // inline void Window::Cursor(const string_view filename) noexcept
-    // { windowCursor = XcursorFilenameLoadCursor(display, filename.data()); }
+    inline void Window::Cursor(const string_view filename) noexcept
+    {}
 
     inline void Window::Title(const string_view title) noexcept
     { windowTitle = title; }
@@ -194,7 +192,7 @@ namespace Luna
     { windowColor = GetColor(hex.data()); }
 
     // inline void Window::HideCursor(const bool hide) const noexcept
-    // { hide ? XFixesHideCursor(display, window) : XFixesShowCursor(display, window); }
+    // {}
 
     inline void Window::InFocus(void(*func)()) noexcept
     { inFocus = func; }

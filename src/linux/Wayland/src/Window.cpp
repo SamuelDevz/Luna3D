@@ -21,10 +21,8 @@ namespace Luna
     Window::Window() noexcept : windowPosX{}, windowPosY{}
     {
         display = wl_display_connect(nullptr);
-
         windowWidth = 1920;
         windowHeight = 1080;
-        // windowCursor = XCreateFontCursor(display, XC_left_ptr);
         windowTitle = string("Windows Game");
         windowMode = FULLSCREEN;
         windowCenterX = windowWidth / 2;
