@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/mman.h>
-#include <wayland-client-protocol.h>
 
 namespace Luna
 {
@@ -18,11 +17,19 @@ namespace Luna
     void (*Window::inFocus)() = nullptr;
     void (*Window::lostFocus)() = nullptr;
 
-    Window::Window() noexcept : windowPosX{}, windowPosY{}
+    Window::Window() noexcept
+        : registry{nullptr},
+        window{nullptr},
+        xdgSurface{nullptr},
+        xdgToplevel{nullptr},
+        decoration{nullptr},
+        windowWidth{},
+        windowHeight{},
+        windowPosX{},
+        windowPosY{}
     {
-        display = wl_display_connect(nullptr);
-        windowWidth = 1920;
-        windowHeight = 1080;
+        display = wl_display_connect(nullptr);  
+        windowColor = 0xFFFFFF;
         windowTitle = string("Windows Game");
         windowMode = FULLSCREEN;
         windowCenterX = windowWidth / 2;
