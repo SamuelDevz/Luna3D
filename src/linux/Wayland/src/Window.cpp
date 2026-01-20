@@ -84,7 +84,7 @@ namespace Luna
     /******XDG Window Manager******/
     /******************************/
 
-    static void XdgWmBasePing(void *data, xdg_wm_base *base, uint32_t serial)
+    static void XdgWmBasePing(void *userData, xdg_wm_base *base, uint32 serial)
     {
         xdg_wm_base_pong(base, serial);
     }
@@ -93,7 +93,7 @@ namespace Luna
     /*********XDG Surface**********/
     /******************************/
 
-    static void SurfaceConfigure(void *data, xdg_surface *surface, uint32_t serial)
+    static void SurfaceConfigure(void *userData, xdg_surface *surface, uint32 serial)
     {
         xdg_surface_ack_configure(surface, serial);
     }
@@ -102,92 +102,26 @@ namespace Luna
     /********XDG Toplevel**********/
     /******************************/
 
-    static void ToplevelConfigure(void *data, xdg_toplevel *toplevel,
+    static void ToplevelConfigure(void *userData, xdg_toplevel *toplevel,
         int32_t width, int32_t height, wl_array *states)
     {
     }
 
-    static void ToplevelConfigureBounds(void *data, xdg_toplevel *toplevel,
+    static void ToplevelConfigureBounds(void *userData, xdg_toplevel *toplevel,
         int32_t width, int32_t height)
     {
     }
 
-    static void ToplevelWmCapabilities(void *data, xdg_toplevel *toplevel,
+    static void ToplevelWmCapabilities(void *userData, xdg_toplevel *toplevel,
         wl_array *capabilities)
     {
     }
 
     /******************************/
-    /***********Registry***********/
+    /************Output************/
     /******************************/
 
-    void Window::RegistryHandleGlobal(void *data, wl_registry *registry,
-        uint32_t id, const char *interface, uint32_t version)
-    {
-        static const xdg_wm_base_listener wmBaseListener = {
-            .ping = XdgWmBasePing,
-        };
-
-        const string iface(interface);
-        if (iface == wl_compositor_interface.name)
-        {
-            compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 4));
-        }
-        else if (iface == wl_output_interface.name)
-        {
-            output = reinterpret_cast<wl_output*>(wl_registry_bind(registry, id, &wl_output_interface, version));
-        }
-        else if (iface == xdg_wm_base_interface.name)
-        {
-            wmBase = reinterpret_cast<xdg_wm_base *>(wl_registry_bind(registry, id, &xdg_wm_base_interface, 1));
-            xdg_wm_base_add_listener(wmBase, &wmBaseListener, nullptr);
-        }
-        else if (iface == wl_shm_interface.name)
-        {
-            shm = reinterpret_cast<wl_shm *>(wl_registry_bind(registry, id, &wl_shm_interface, 1));
-        }
-        else if (iface == zxdg_decoration_manager_v1_interface.name)
-        {
-            decoManager = reinterpret_cast<zxdg_decoration_manager_v1*>(wl_registry_bind(registry, id, &zxdg_decoration_manager_v1_interface, 1));
-        }
-    }
-
-    static void RegistryGlobalRemove(void *data, wl_registry *registry, uint32_t id) {}
-
-    wl_buffer* CreateShmBuffer(int32 width, int32 height, uint32 color, wl_shm * shm)
-    {
-        int32 stride = width * 4;
-        int32 size = stride * height; // bytes
-
-        // open an anonymous file and write some zero bytes to it
-        int32 fd = syscall(SYS_memfd_create, "buffer", 0);
-        ftruncate(fd, size);
-
-        // map it to the memory
-        void * data = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
-        // change color the buffer
-        uint32_t *pixel = reinterpret_cast<uint32_t*>(data);
-        for (uint32 i = 0; i < size / 4; ++i)
-            pixel[i] = color;
-
-        wl_shm_pool *pool = wl_shm_create_pool(shm, fd, size);
-        wl_buffer *buffer = wl_shm_pool_create_buffer(
-            pool,
-            0,
-            width,
-            height,
-            stride,
-            WL_SHM_FORMAT_XRGB8888
-        );
-
-        wl_shm_pool_destroy(pool);
-        close(fd);
-
-        return buffer;
-    }
-
-    void Window::OutputHandleGeometry(void* data, wl_output *wl_output,
+    void Window::OutputHandleGeometry(void* userData, wl_output *wl_output,
         int32 x, int32 y, 
         int32 physicalWidth, int32 physicalHeight, 
         int32 subpixel, const char *make,
@@ -206,7 +140,7 @@ namespace Luna
         return b ? Euclid(b, a % b) : a;
     }
 
-    void Window::OutputHandleMode(void *data, wl_output *wl_output,
+    void Window::OutputHandleMode(void *userData, wl_output *wl_output,
         uint32 flags, int32 width, int32 height, int32 refresh) 
     {
         monitor->resolution.width = width;
@@ -215,21 +149,21 @@ namespace Luna
         monitor->mode = flags;
     }
 
-    void Window::OutputHandleScale(void *data, wl_output *wl_output, int32 factor) 
+    void Window::OutputHandleScale(void *userData, wl_output *wl_output, int32 factor) 
     {
         monitor->scale = factor;
     }
     
-    void Window::OutputHandleName(void *data, wl_output *wl_output, const char *name) 
+    void Window::OutputHandleName(void *userData, wl_output *wl_output, const char *name) 
     {
         monitor->deviceName = name ? string(name) : "";
     }
     
-    void Window::OutputHandleDescription(void *data, wl_output *wl_output, const char *description) 
+    void Window::OutputHandleDescription(void *userData, wl_output *wl_output, const char *description) 
     {
     }
 
-    void Window::OutputHandleDone(void *data, wl_output *wl_output) 
+    void Window::OutputHandleDone(void *userData, wl_output *wl_output) 
     {
         if (!monitor)
             return;
@@ -311,6 +245,76 @@ namespace Luna
         */
     }
 
+    /******************************/
+    /***********Registry***********/
+    /******************************/
+
+    static void RegistryGlobalRemove(void *userData, wl_registry *registry, uint32 id) {}
+
+    void Window::RegistryHandleGlobal(void *userData, wl_registry *registry,
+        uint32 id, const char *interface, uint32 version)
+    {
+        static const xdg_wm_base_listener wmBaseListener = {
+            .ping = XdgWmBasePing,
+        };
+
+        const string iface(interface);
+        if (iface == wl_compositor_interface.name)
+        {
+            compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 4));
+        }
+        else if (iface == wl_output_interface.name)
+        {
+            output = reinterpret_cast<wl_output*>(wl_registry_bind(registry, id, &wl_output_interface, version));
+        }
+        else if (iface == xdg_wm_base_interface.name)
+        {
+            wmBase = reinterpret_cast<xdg_wm_base *>(wl_registry_bind(registry, id, &xdg_wm_base_interface, 1));
+            xdg_wm_base_add_listener(wmBase, &wmBaseListener, nullptr);
+        }
+        else if (iface == wl_shm_interface.name)
+        {
+            shm = reinterpret_cast<wl_shm *>(wl_registry_bind(registry, id, &wl_shm_interface, 1));
+        }
+        else if (iface == zxdg_decoration_manager_v1_interface.name)
+        {
+            decoManager = reinterpret_cast<zxdg_decoration_manager_v1*>(wl_registry_bind(registry, id, &zxdg_decoration_manager_v1_interface, 1));
+        }
+    }
+
+    wl_buffer* CreateShmBuffer(int32 width, int32 height, uint32 color, wl_shm * shm)
+    {
+        int32 stride = width * 4;
+        int32 size = stride * height; // bytes
+
+        // open an anonymous file and write some zero bytes to it
+        int32 fd = syscall(SYS_memfd_create, "buffer", 0);
+        ftruncate(fd, size);
+
+        // map it to the memory
+        void * data = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+        // change color the buffer
+        uint32 *pixel = reinterpret_cast<uint32*>(data);
+        for (uint32 i = 0; i < size / 4; ++i)
+            pixel[i] = color;
+
+        wl_shm_pool *pool = wl_shm_create_pool(shm, fd, size);
+        wl_buffer *buffer = wl_shm_pool_create_buffer(
+            pool,
+            0,
+            width,
+            height,
+            stride,
+            WL_SHM_FORMAT_XRGB8888
+        );
+
+        wl_shm_pool_destroy(pool);
+        close(fd);
+
+        return buffer;
+    }
+
     bool Window::Create() noexcept
     {
         if(!display)
@@ -338,7 +342,6 @@ namespace Luna
 
         wl_output_add_listener(output, &outputListener, nullptr);
         window = wl_compositor_create_surface(compositor);
-        // wl_surface_add_listener(window, &surface_listener, window);
         xdgSurface = xdg_wm_base_get_xdg_surface(wmBase, window);
 
         static const xdg_surface_listener xdgSurfaceListener = {
