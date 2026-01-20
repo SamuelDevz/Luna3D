@@ -11,6 +11,34 @@ namespace Luna
 {
     enum WindowModes { FULLSCREEN, WINDOWED, BORDERLESS };
 
+    struct Point
+    {
+        int32 x, y;
+    };
+
+    struct Resolution
+    {
+        uint32 width, height;
+    };
+
+    struct OutputInfo
+    {
+        string deviceName;
+        union {
+            Point position;
+            struct {
+                Point position;
+                uint32 displayOrientation;
+            } DUMMYSTRUCTNAME2;
+        } DUMMYUNIONNAME;
+        Resolution resolution;
+        Resolution physicalSize;
+        uint32 refreshRate;
+        int32 scale;
+        uint32 dpi;
+        uint32 mode;
+    };
+
     class DLL Window
     {
     private:
@@ -42,6 +70,29 @@ namespace Luna
         static xdg_toplevel_listener * toplevel_listener;
         static zxdg_decoration_manager_v1* deco_manager;
         static wl_output * output;
+        static OutputInfo * monitor;
+
+        static void OutputHandleGeometry(void *data, wl_output *wl_output,
+            int32 x, int32 y,
+            int32 physical_width, int32 physical_height, 
+            int32 subpixel, const char *make,
+            const char *model, int32 transform);
+
+        static void OutputHandleMode(void *data, wl_output *wl_output,
+            uint32 flags, 
+            int32 width, int32 height,
+            int32 refresh);
+
+        static void OutputHandleScale(void *data, wl_output *wl_output, 
+            int32 factor);
+
+        static void OutputHandleName(void *data, wl_output *wl_output, 
+            const char *name);
+
+        static void OutputHandleDescription(void *data, wl_output *wl_output, 
+            const char *description);
+            
+        static void OutputHandleDone(void *data, wl_output *wl_output);
 
         static void registry_handle_global(
             void *data,
