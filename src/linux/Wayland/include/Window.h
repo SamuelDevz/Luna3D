@@ -42,58 +42,58 @@ namespace Luna
     class DLL Window
     {
     private:
-        wl_display*           display;
-        wl_registry *         registry;
-        wl_surface *          window;
-        xdg_surface *         xdgSurface;
-        xdg_toplevel *        xdgToplevel;
-        zxdg_toplevel_decoration_v1* decoration;
-        int32		          windowWidth;
-        int32		          windowHeight;
-        uint32	        windowColor;
-        string		    windowTitle;
-        int32		    windowMode;
-        int32		    windowPosX;
-        int32		    windowPosY;
-        int32		    windowCenterX;
-        int32		    windowCenterY;
+        wl_display*                         display;
+        wl_registry *                       registry;
+        wl_surface *                        window;
+        xdg_surface *                       xdgSurface;
+        xdg_toplevel *                      xdgToplevel;
+        zxdg_toplevel_decoration_v1*        decoration;
+        int32		                        windowWidth;
+        int32		                        windowHeight;
+        uint32	                            windowColor;
+        string		                        windowTitle;
+        int32		                        windowMode;
+        int32		                        windowPosX;
+        int32		                        windowPosY;
+        int32		                        windowCenterX;
+        int32		                        windowCenterY;
 
         static void (*inFocus)();
         static void (*lostFocus)();
 
-        static wl_compositor *compositor;
-        static xdg_wm_base * wmBase;
-        static wl_shm * shm;
-        static wl_buffer * buffer;
-        static xdg_toplevel_listener * toplevelListener;
-        static zxdg_decoration_manager_v1* decoManager;
-        static wl_output * output;
-        static OutputInfo * monitor;
+        static wl_compositor *              compositor;
+        static xdg_wm_base *                wmBase;
+        static wl_shm *                     shm;
+        static wl_buffer *                  buffer;
+        static xdg_toplevel_listener *      toplevelListener;
+        static zxdg_decoration_manager_v1*  decoManager;
+        static wl_output *                  output;
+        static OutputInfo *                 monitor;
 
-        static void OutputHandleGeometry(void *data, wl_output *wl_output,
+        static void OutputHandleGeometry(void *userData, wl_output *wl_output,
             int32 x, int32 y,
             int32 physical_width, int32 physical_height, 
             int32 subpixel, const char *make,
             const char *model, int32 transform);
 
-        static void OutputHandleMode(void *data, wl_output *wl_output,
+        static void OutputHandleMode(void *userData, wl_output *wl_output,
             uint32 flags, 
             int32 width, int32 height,
             int32 refresh);
 
-        static void OutputHandleScale(void *data, wl_output *wl_output, 
+        static void OutputHandleScale(void *userData, wl_output *wl_output, 
             int32 factor);
 
-        static void OutputHandleName(void *data, wl_output *wl_output, 
+        static void OutputHandleName(void *userData, wl_output *wl_output, 
             const char *name);
 
-        static void OutputHandleDescription(void *data, wl_output *wl_output, 
+        static void OutputHandleDescription(void *userData, wl_output *wl_output, 
             const char *description);
             
-        static void OutputHandleDone(void *data, wl_output *wl_output);
+        static void OutputHandleDone(void *userData, wl_output *wl_output);
 
         static void RegistryHandleGlobal(
-            void *data,
+            void *userData,
             struct wl_registry *registry,
             uint32_t name,
             const char *interface,
