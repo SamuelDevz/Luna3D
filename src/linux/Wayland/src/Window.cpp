@@ -265,25 +265,25 @@ namespace Luna
             .ping = XdgWmBasePing,
         };
 
-        const string iface(interface);
-        if (iface == wl_compositor_interface.name)
+        const string interface(interface);
+        if (interface == wl_compositor_interface.name)
         {
             compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 4));
         }
-        else if (iface == wl_output_interface.name)
+        else if (interface == wl_output_interface.name)
         {
             output = reinterpret_cast<wl_output*>(wl_registry_bind(registry, id, &wl_output_interface, version));
         }
-        else if (iface == xdg_wm_base_interface.name)
+        else if (interface == xdg_wm_base_interface.name)
         {
             wmBase = reinterpret_cast<xdg_wm_base *>(wl_registry_bind(registry, id, &xdg_wm_base_interface, 1));
             xdg_wm_base_add_listener(wmBase, &wmBaseListener, nullptr);
         }
-        else if (iface == wl_shm_interface.name)
+        else if (interface == wl_shm_interface.name)
         {
             shm = reinterpret_cast<wl_shm *>(wl_registry_bind(registry, id, &wl_shm_interface, 1));
         }
-        else if (iface == zxdg_decoration_manager_v1_interface.name)
+        else if (interface == zxdg_decoration_manager_v1_interface.name)
         {
             decoManager = reinterpret_cast<zxdg_decoration_manager_v1*>(wl_registry_bind(registry, id, &zxdg_decoration_manager_v1_interface, 1));
         }
@@ -351,7 +351,7 @@ namespace Luna
         wl_display_roundtrip(display);
         windowPosX = (monitor->resolution.width - windowWidth) / 2;
         windowPosY = (monitor->resolution.height - windowHeight) / 2;
-        
+
         window = wl_compositor_create_surface(compositor);
         xdgSurface = xdg_wm_base_get_xdg_surface(wmBase, window);
 
