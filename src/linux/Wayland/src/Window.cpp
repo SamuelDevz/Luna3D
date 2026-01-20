@@ -78,9 +78,6 @@ namespace Luna
 
         windowCenterX = windowWidth / 2;
         windowCenterY = windowHeight / 2;
-
-        windowPosX = (1920 - windowWidth) / 2;
-        windowPosY = (1080 - windowHeight) / 2;
     }
 
     void Window::Close() noexcept
@@ -150,9 +147,12 @@ namespace Luna
     void Window::OutputHandleMode(void *userData, wl_output *wl_output,
         uint32 flags, int32 width, int32 height, int32 refresh) 
     {
-        monitor->resolution.width = width;
-        monitor->resolution.height = height;
-        monitor->refreshRate = refresh / 1000;
+        if (flags & WL_OUTPUT_MODE_CURRENT) 
+        {
+            monitor->resolution.width = width;
+            monitor->resolution.height = height;
+            monitor->refreshRate = refresh / 1000;
+        }
         monitor->mode = flags;
     }
 
@@ -348,6 +348,10 @@ namespace Luna
         };
 
         wl_output_add_listener(output, &outputListener, nullptr);
+        wl_display_roundtrip(display);
+        windowPosX = (monitor->resolution.width - windowWidth) / 2;
+        windowPosY = (monitor->resolution.height - windowHeight) / 2;
+        
         window = wl_compositor_create_surface(compositor);
         xdgSurface = xdg_wm_base_get_xdg_surface(wmBase, window);
 
