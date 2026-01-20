@@ -365,7 +365,7 @@ namespace Luna
         if(windowMode == FULLSCREEN)
             xdg_toplevel_set_fullscreen(xdgToplevel, nullptr);
 
-        if(windowMode == WINDOWED)
+        if(windowMode != BORDERLESS)
         {
             if (decoManager)
             {
