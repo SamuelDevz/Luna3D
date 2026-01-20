@@ -13,6 +13,7 @@ namespace Luna
     xdg_toplevel_listener* Window::toplevel_listener = nullptr;
     zxdg_decoration_manager_v1* Window::deco_manager = nullptr;
     wl_output * Window::output = nullptr;
+    OutputInfo * Window::monitor = nullptr;
 
     void (*Window::inFocus)() = nullptr;
     void (*Window::lostFocus)() = nullptr;
@@ -35,7 +36,8 @@ namespace Luna
         if (buffer)
             wl_buffer_destroy(buffer);
 
-        wl_output_destroy(output);        
+        delete monitor;
+        wl_output_destroy(output);    
         zxdg_toplevel_decoration_v1_destroy(decoration);
         xdg_toplevel_destroy(xdgToplevel);
         xdg_surface_destroy(xdgSurface);
@@ -156,11 +158,11 @@ namespace Luna
 
     wl_buffer* CreateShmBuffer(int32 width, int32 height, uint32 color, wl_shm * shm)
     {
-        int stride = width * 4;
-        int size = stride * height; // bytes
+        int32 stride = width * 4;
+        int32 size = stride * height; // bytes
 
         // open an anonymous file and write some zero bytes to it
-        int fd = syscall(SYS_memfd_create, "buffer", 0);
+        int32 fd = syscall(SYS_memfd_create, "buffer", 0);
         ftruncate(fd, size);
 
         // map it to the memory
@@ -187,17 +189,106 @@ namespace Luna
         return buffer;
     }
 
-    void output_geometry(void* data, wl_output *wl_output,
-        int x, int y, int physical_width,
-        int physical_height, int subpixel, const char *make,
-        const char *model, int transform) 
+    void Window::OutputHandleGeometry(void* data, wl_output *wl_output,
+        int32 x, int32 y, 
+        int32 physicalWidth, int32 physicalHeight, 
+        int32 subpixel, const char *make,
+        const char *model, int32 transform) 
     {
-        printf("=== Monitor Geometry Information ===\n");
-        printf("Position: (%d, %d)\n", x, y);
-        printf("Physical dimensions: %d x %d mm\n", physical_width, physical_height);
-        
+        monitor->physicalSize.width = physicalWidth;
+        monitor->physicalSize.height = physicalHeight;
+        monitor->DUMMYUNIONNAME.position.x = x;
+        monitor->DUMMYUNIONNAME.position.y = y;
+        // monitor->subpixel = subpixel;
+        // monitor->DUMMYUNIONNAME.DUMMYSTRUCTNAME2.displayOrientation = transform;
+    }
+
+    static int32 euclid(const int32 a, const int32 b)
+    {
+        return b ? euclid(b, a % b) : a;
+    }
+
+    void Window::OutputHandleMode(void *data, wl_output *wl_output,
+        uint32 flags, int32 width, int32 height, int32 refresh) 
+    {
+        monitor->resolution.width = width;
+        monitor->resolution.height = height;
+        monitor->refreshRate = refresh / 1000;
+        monitor->mode = flags;
+    }
+
+    void Window::OutputHandleScale(void *data, wl_output *wl_output, int32 factor) 
+    {
+        monitor->scale = factor;
+    }
+    
+    void Window::OutputHandleName(void *data, wl_output *wl_output, const char *name) 
+    {
+        monitor->deviceName = name ? string(name) : "";
+    }
+    
+    void Window::OutputHandleDescription(void *data, wl_output *wl_output, const char *description) 
+    {
+    }
+
+    void Window::OutputHandleDone(void *data, wl_output *wl_output) 
+    {
+        if (!monitor)
+            return;
+
+        if (monitor->physicalSize.width <= 0 || monitor->physicalSize.height <= 0)
+        {
+            // If Wayland does not provide a physical size, assume the default 96 DPI
+            monitor->dpi = 96;
+            monitor->physicalSize.width  = static_cast<uint32>(monitor->resolution.width * 25.4f / monitor->dpi);
+            monitor->physicalSize.height = static_cast<uint32>(monitor->resolution.height * 25.4f / monitor->dpi);
+        }
+        else
+        {
+            monitor->dpi = static_cast<uint32>(monitor->resolution.width * 25.4f / monitor->physicalSize.width);
+        }
+
+        if (!monitor->deviceName.empty()) 
+            printf("Name: %s\n", monitor->deviceName.c_str());
+        else
+            printf("Name: not available\n");
+
+        switch (monitor->mode) 
+        {
+            case WL_OUTPUT_MODE_CURRENT:
+                printf("Current mode: ");
+                break;
+            
+            case WL_OUTPUT_MODE_PREFERRED:
+                printf("Preferred mode: ");
+                break;
+            
+            default: printf("None mode: ");
+        }
+
+        const int32 gcd = euclid(monitor->resolution.width, monitor->resolution.height);
+
+        printf("%d x %d (%d:%d) %dHz\n", 
+            monitor->resolution.width, 
+            monitor->resolution.height, 
+            monitor->resolution.width / gcd, 
+            monitor->resolution.height / gcd,
+            monitor->refreshRate
+        );
+        printf("Virtual position: (%d, %d)\n", monitor->DUMMYUNIONNAME.position.x, monitor->DUMMYUNIONNAME.position.y);
+        printf("Scale factor: %d\n", monitor->scale);
+        printf("Physical size: %d x %d mm (%d dpi at %d x %d)\n", 
+            monitor->physicalSize.width, 
+            monitor->physicalSize.height,
+            monitor->dpi,
+            monitor->resolution.width,
+            monitor->resolution.height
+        );
+
+        /*
+        // Print subpixel information
         const char* subpixel_str = "unknown";
-        switch(subpixel) 
+        switch(monitor->subpixel) 
         {
             case WL_OUTPUT_SUBPIXEL_NONE: subpixel_str = "none"; break;
             case WL_OUTPUT_SUBPIXEL_HORIZONTAL_RGB: subpixel_str = "horizontal RGB"; break;
@@ -207,11 +298,8 @@ namespace Luna
         }
         printf("Subpixel: %s\n", subpixel_str);
         
-        if (make) printf("Manufacturer: %s\n", make);
-        if (model) printf("Model: %s\n", model);
-        
         const char* transform_str = "normal";
-        switch(transform) 
+        switch(monitor->DUMMYUNIONNAME.DUMMYSTRUCTNAME2.displayOrientation) 
         {
             case WL_OUTPUT_TRANSFORM_90: transform_str = "90°"; break;
             case WL_OUTPUT_TRANSFORM_180: transform_str = "180°"; break;
@@ -222,50 +310,7 @@ namespace Luna
             case WL_OUTPUT_TRANSFORM_FLIPPED_270: transform_str = "flipped 270°"; break;
         }
         printf("Transform: %s\n", transform_str);
-        printf("\n");
-    }
-
-    void output_mode(void *data, wl_output *wl_output,
-        uint flags, int width, int height, int refresh) 
-    {
-        printf("=== Monitor Video Mode ===\n");
-        printf("Resolution: %d x %d pixels\n", width, height);
-        printf("Refresh rate: %.2f Hz\n", refresh / 1000.0f);
-        
-        bool is_current = (flags & WL_OUTPUT_MODE_CURRENT) != 0;
-        bool is_preferred = (flags & WL_OUTPUT_MODE_PREFERRED) != 0;
-        
-        printf("Flags: ");
-        if (is_current) printf("[CURRENT] ");
-        if (is_preferred) printf("[PREFERRED] ");
-        if (!is_current && !is_preferred) printf("none");
-        printf("\n\n");
-    }
-    
-    void output_scale(void *data, wl_output *wl_output, int factor) 
-    {
-        printf("=== Monitor Scale ===\n");
-        printf("Scale factor: %d\n\n", factor);
-    }
-    
-    void output_name(void *data, wl_output *wl_output, const char *name) 
-    {
-        printf("=== Monitor Name ===\n");
-        if (name) printf("Name: %s\n\n", name);
-        else      printf("Name: not available\n\n");
-    }
-    
-    void output_description(void *data, wl_output *wl_output, const char *description) 
-    {
-        printf("=== Monitor Description ===\n");
-        if (description) printf("Description: %s\n\n", description);
-        else             printf("Description: not available\n\n");
-    }
-
-    void output_done(void *data, wl_output *wl_output) 
-    {
-        printf("=== Monitor Configuration Complete ===\n");
-        printf("All monitor information has been received.\n\n");
+        */
     }
 
     bool Window::Create() noexcept
@@ -282,13 +327,15 @@ namespace Luna
         wl_registry_add_listener(registry, &registry_listener, nullptr);
         wl_display_roundtrip(display);
 
+        monitor = new OutputInfo;
+
         const wl_output_listener output_listener = {
-            .geometry = output_geometry,
-            .mode = output_mode,
-            .done = output_done,
-            .scale = output_scale,
-            .name = output_name,
-            .description = output_description,
+            .geometry = OutputHandleGeometry,
+            .mode = OutputHandleMode,
+            .done = OutputHandleDone,
+            .scale = OutputHandleScale,
+            .name = OutputHandleName,
+            .description = OutputHandleDescription,
         };
 
         wl_output_add_listener(output, &output_listener, nullptr);
