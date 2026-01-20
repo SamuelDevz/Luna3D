@@ -38,8 +38,8 @@ int main()
     engine->window->Size(800, 600);
     engine->window->Color("#007acc");
     engine->window->Title("Window Game");
-    // engine->window->Icon(GetIconFile());
-    // engine->window->Cursor(GetCursorFile());
+    engine->window->Icon(GetIconFile());
+    engine->window->Cursor(GetCursorFile());
     // engine->window->LostFocus(Engine::Pause);
     // engine->window->InFocus(Engine::Resume);
 
