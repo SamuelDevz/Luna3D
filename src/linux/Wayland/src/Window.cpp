@@ -352,6 +352,12 @@ namespace Luna
         windowPosX = (monitor->resolution.width - windowWidth) / 2;
         windowPosY = (monitor->resolution.height - windowHeight) / 2;
 
+        if((windowWidth == 0 || windowHeight == 0) && windowMode == FULLSCREEN)
+        {
+            windowWidth = monitor->resolution.width;
+            windowHeight = monitor->resolution.height;
+        }
+
         window = wl_compositor_create_surface(compositor);
         xdgSurface = xdg_wm_base_get_xdg_surface(wmBase, window);
 
