@@ -100,26 +100,7 @@ namespace Luna
     static void SurfaceConfigure(void *userData, xdg_surface *surface, uint32 serial)
     {
         xdg_surface_ack_configure(surface, serial);
-    }
-
-    /******************************/
-    /********XDG Toplevel**********/
-    /******************************/
-
-    static void ToplevelConfigure(void *userData, xdg_toplevel *toplevel,
-        int32_t width, int32_t height, wl_array *states)
-    {
-    }
-
-    static void ToplevelConfigureBounds(void *userData, xdg_toplevel *toplevel,
-        int32_t width, int32_t height)
-    {
-    }
-
-    static void ToplevelWmCapabilities(void *userData, xdg_toplevel *toplevel,
-        wl_array *capabilities)
-    {
-    }
+    }    
 
     /******************************/
     /************Output************/
@@ -164,10 +145,6 @@ namespace Luna
     void Window::OutputHandleName(void *userData, wl_output *wl_output, const char *name) 
     {
         monitor->deviceName = name ? string(name) : "";
-    }
-    
-    void Window::OutputHandleDescription(void *userData, wl_output *wl_output, const char *description) 
-    {
     }
 
     void Window::OutputHandleDone(void *userData, wl_output *wl_output) 
@@ -344,7 +321,7 @@ namespace Luna
             .done = OutputHandleDone,
             .scale = OutputHandleScale,
             .name = OutputHandleName,
-            .description = OutputHandleDescription,
+            .description = [](void*, wl_output*, const char*) {},
         };
 
         wl_output_add_listener(output, &outputListener, nullptr);
@@ -370,9 +347,9 @@ namespace Luna
         xdgToplevel = xdg_surface_get_toplevel(xdgSurface);
 
         toplevelListener = new xdg_toplevel_listener {
-            .configure = ToplevelConfigure,
-            .configure_bounds = ToplevelConfigureBounds,
-            .wm_capabilities = ToplevelWmCapabilities
+            .configure = [](void*, xdg_toplevel*, int32, int32, wl_array*) {},
+            .configure_bounds = [](void*, xdg_toplevel*, int32, int32) {},
+            .wm_capabilities = [](void*, xdg_toplevel*, wl_array*) {}
         };
 
         xdg_toplevel_add_listener(xdgToplevel, toplevelListener, nullptr);
