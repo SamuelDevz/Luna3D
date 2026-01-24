@@ -34,10 +34,7 @@ namespace Luna
     int32 Engine::Loop()
     {
         game->Init();
-
-        auto listener = window->XDGTopLevelListener();
-        listener->close = Quit;
-        xdg_toplevel_add_listener(window->XDGTopLevel(), listener, nullptr);
+        window->OnClose(Quit);
 
         do
         {

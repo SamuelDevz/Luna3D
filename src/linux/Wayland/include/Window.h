@@ -60,6 +60,7 @@ namespace Luna
 
         static void (*inFocus)();
         static void (*lostFocus)();
+        static void (*onClose)(void*, xdg_toplevel*);
 
         static wl_compositor *              compositor;
         static xdg_wm_base *                wmBase;
@@ -133,6 +134,7 @@ namespace Luna
 
         void InFocus(void(*func)()) noexcept;
         void LostFocus(void(*func)()) noexcept;
+        void OnClose(void(*func)(void*, xdg_toplevel*)) noexcept;
 
         static xdg_toplevel_listener* XDGTopLevelListener() noexcept;
     };
@@ -199,6 +201,9 @@ namespace Luna
 
     inline void Window::LostFocus(void(*func)()) noexcept
     { lostFocus = func; }
+
+    inline void Window::OnClose(void(*func)(void*, xdg_toplevel*)) noexcept
+    { onClose = func; }
 
     inline xdg_toplevel_listener* Window::XDGTopLevelListener() noexcept
     { return toplevelListener; }
