@@ -16,6 +16,7 @@ namespace Luna
 
     void (*Window::inFocus)() = nullptr;
     void (*Window::lostFocus)() = nullptr;
+    void (*Window::onClose)(void*, xdg_toplevel*) = nullptr;
 
     Window::Window() noexcept
         : registry{nullptr},
@@ -82,6 +83,8 @@ namespace Luna
 
     void Window::Close() noexcept
     {
+        if(onClose)
+            onClose(nullptr, nullptr);
     }
 
     /******************************/
