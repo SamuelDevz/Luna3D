@@ -351,6 +351,9 @@ namespace Luna
 
         toplevelListener = new xdg_toplevel_listener {
             .configure = [](void*, xdg_toplevel*, int32, int32, wl_array*) {},
+            .close = [](void*, xdg_toplevel*) { 
+                if(onClose) onClose(nullptr, nullptr); 
+            },
             .configure_bounds = [](void*, xdg_toplevel*, int32, int32) {},
             .wm_capabilities = [](void*, xdg_toplevel*, wl_array*) {}
         };
