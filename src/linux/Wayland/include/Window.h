@@ -128,7 +128,6 @@ namespace Luna
         void Mode(const uint32 mode) noexcept;
         void Color(const string_view hex) noexcept;
 
-        // void HideCursor(const bool hide) const noexcept;
         void Close() noexcept;
         bool Create() noexcept;
 
@@ -192,9 +191,6 @@ namespace Luna
 
     inline void Window::Color(const string_view hex) noexcept
     { windowColor = GetColor(hex.data()); }
-
-    // inline void Window::HideCursor(const bool hide) const noexcept
-    // {}
 
     inline void Window::InFocus(void(*func)()) noexcept
     { inFocus = func; }
