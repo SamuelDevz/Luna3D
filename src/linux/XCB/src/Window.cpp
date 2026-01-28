@@ -1,7 +1,6 @@
 #include "Window.h"
 #include <xcb/xcb_icccm.h>
 #include <unistd.h>
-#include <cstdlib>
 #include <png.h>
 
 namespace Luna
@@ -98,7 +97,7 @@ namespace Luna
         xcb_flush(connection); 
     }
 
-    xcb_atom_t GetAtom(xcb_connection_t* connection, const string_view atom)
+    static xcb_atom_t GetAtom(xcb_connection_t* connection, const string_view atom)
     {
         auto cookie = xcb_intern_atom(connection, 0, atom.size(), atom.data());
         auto atomReply = xcb_intern_atom_reply(connection, cookie, nullptr);
@@ -109,7 +108,7 @@ namespace Luna
         return result;
     }
 
-    bool LoadPNG(const string_view filename, unsigned char ** imageData, int32 & width, int32 & height)
+    static bool LoadPNG(const string_view filename, unsigned char ** imageData, int32 & width, int32 & height)
     {
         FILE *fp = fopen(filename.data(), "rb");
         if (!fp)
@@ -228,7 +227,7 @@ namespace Luna
         xcb_flush(connection);
     }
 
-    void Fullscreen(xcb_connection_t* connection, xcb_window_t window)
+    static void Fullscreen(xcb_connection_t* connection, xcb_window_t window)
     {
         xcb_atom_t netWmState = GetAtom(connection, "_NET_WM_STATE");
         xcb_atom_t netWmStateFullscreen = GetAtom(connection, "_NET_WM_STATE_FULLSCREEN");
@@ -245,15 +244,15 @@ namespace Luna
         );
     }
 
-    void Borderless(xcb_connection_t* connection, xcb_window_t window) 
+    static void Borderless(xcb_connection_t* connection, xcb_window_t window) 
     {
         struct
         {
-            uint32   flags;
-            uint32   functions;
-            uint32   decorations;
-            int32    input_mode;
-            uint32   status;
+            uint32 flags;
+            uint32 functions;
+            uint32 decorations;
+            int32 input_mode;
+            uint32 status;
         } hints{};
 
         hints.flags = 2;

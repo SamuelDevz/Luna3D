@@ -138,79 +138,79 @@ namespace Luna
     void Input::Reader(xcb_generic_event_t* event)
     {
         bool read = true;
-        while(read)
+
+        while (read)
         {
             event = xcb_wait_for_event(connection);
-
-            switch(event->response_type & 0x7f)
+            
+            switch (event->response_type & 0x7f)
             {
                 case XCB_MAP_NOTIFY:
                 {
-                    xcb_mapping_notify_event_t * notify = reinterpret_cast<xcb_mapping_notify_event_t*>(event);
+                    auto* notify = reinterpret_cast<xcb_mapping_notify_event_t*>(event); 
                     xcb_refresh_keyboard_mapping(keysyms, notify);
+                    break;
                 }
-                break;
-                    
+
                 case XCB_KEY_PRESS:
                 {
-                    xcb_key_press_event_t * keyPress = reinterpret_cast<xcb_key_press_event_t*>(event);
+                    auto* keyPress = reinterpret_cast<xcb_key_press_event_t*>(event); 
                     xcb_keysym_t key = xcb_key_press_lookup_keysym(keysyms, keyPress, 0);
-
                     switch (key)
                     {
                     case VK_BACK:
                         if (!text.empty())
-                            text.erase(text.size() - 1);
+                            text.pop_back();
                         break;
 
                     case VK_TAB:
                         Input::InputProc(event);
                         break;
-                    
+
                     case VK_RETURN:
                         read = false;
                         break;
                     }
 
                     text += LookupText(keyPress, state, composeState);
+                    break;
                 }
-                break;
             }
-        }
 
-        Input::InputProc(event);
+            Input::InputProc(event);
+        }
     }
 
     void Input::InputProc(xcb_generic_event_t* event)
     {
-        switch(event->response_type & 0x7f)
+        switch (event->response_type & 0x7f)
         {
             case XCB_KEY_PRESS:
             {
-                xcb_key_press_event_t * keyPress = reinterpret_cast<xcb_key_press_event_t*>(event);
+                auto* keyPress = reinterpret_cast<xcb_key_press_event_t*>(event);
                 keys[keyPress->detail] = true;
+                break;
             }
-            break;
-            
+
             case XCB_KEY_RELEASE:
             {
-                xcb_key_release_event_t * keyRelease = reinterpret_cast<xcb_key_release_event_t *>(event);
+                auto* keyRelease = reinterpret_cast<xcb_key_release_event_t*>(event);
                 keys[keyRelease->detail] = false;
+                break;
             }
-            break;
-            
+
             case XCB_MOTION_NOTIFY:
             {
-                xcb_motion_notify_event_t * motion = reinterpret_cast<xcb_motion_notify_event_t *>(event);
+                auto* motion = reinterpret_cast<xcb_motion_notify_event_t*>(event);
                 mouseX = motion->event_x;
                 mouseY = motion->event_y;
+                break;
             }
-            break;
-            
+
             case XCB_BUTTON_PRESS:
             {
-                xcb_button_press_event_t * buttonPress = reinterpret_cast<xcb_button_press_event_t *>(event);
-                switch(buttonPress->detail)
+                auto* buttonPress = reinterpret_cast<xcb_button_press_event_t*>(event);
+                switch (buttonPress->detail)
                 {
                 case VK_LBUTTON:
                     keys[VK_LBUTTON] = true;
@@ -232,13 +232,13 @@ namespace Luna
                     mouseWheel = -120;
                     break;
                 }
+                break;
             }
-            break;
 
             case XCB_BUTTON_RELEASE:
             {
-                xcb_button_release_event_t *buttonRelase = reinterpret_cast<xcb_button_release_event_t *>(event);
-                switch(buttonRelase->detail)
+                auto* buttonRelease = reinterpret_cast<xcb_button_release_event_t*>(event);
+                switch (buttonRelease->detail)
                 {
                 case VK_LBUTTON:
                     keys[VK_LBUTTON] = false;
@@ -252,8 +252,8 @@ namespace Luna
                     keys[VK_RBUTTON] = false;
                     break;
                 }
+                break;
             }
-            break;
         }
 
         Window::WinProc(event);
