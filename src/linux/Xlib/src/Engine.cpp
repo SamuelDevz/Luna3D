@@ -77,12 +77,11 @@ namespace Luna
         timer.Start();
         XEvent event{};
         game->Init();
-
         input->Initialize(window->XDisplay(), window->Id(), &event);
 
         do
         {
-            while (XPending(window->XDisplay()))
+            while (XPending(window->XDisplay()) > 0)
             {
                 XNextEvent(window->XDisplay(), &event);
                 
