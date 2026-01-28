@@ -10,11 +10,10 @@ Obviamente que não há pretenção em concorrer com motores profissionais a ní
 Luna3D/
 ├── src/                # Código-fonte (.cpp)
 │   ├── win/            # plataforma windows
-│   ├── linux/          # plataforma linux
-│   │   ├── XCB/        # biblioteca XCB
-│   │   ├── Xlib/       # biblioteca Xlib
-│   │   └── Wayland/    # biblioteca Wayland
-│   └── ...             # Outras plataformas (Em breve)
+│   └── linux/          # plataforma linux
+│       ├── XCB/        # biblioteca XCB
+│       ├── Xlib/       # biblioteca Xlib
+│       └── Wayland/    # biblioteca Wayland
 ├── examples/           # Alguns exemplos de código usando a game engine
 │   ├── simplewindow/   # Cria um simples janela
 │   ├── hellotriangle/  # Cria um simples triangle na tela
