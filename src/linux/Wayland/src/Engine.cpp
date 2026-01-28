@@ -3,6 +3,7 @@
 namespace Luna 
 {
     Window*   Engine::window = nullptr;
+    Input*    Engine::input = nullptr;
     Game*     Engine::game = nullptr;
     bool      Engine::quit = false;
 
@@ -14,6 +15,7 @@ namespace Luna
     Engine::~Engine() noexcept
     {
         delete game;
+        delete input;
         delete window;
     }
 
@@ -22,6 +24,8 @@ namespace Luna
         this->game = game;
 
         window->Create();
+
+        input = new Input();
 
         return Loop();
     }
@@ -35,6 +39,7 @@ namespace Luna
     {
         game->Init();
         window->OnClose(Quit);
+        input->Initialize(window->Display());
 
         do
         {
