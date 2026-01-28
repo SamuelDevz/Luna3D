@@ -2,14 +2,20 @@
 #include "KeyCodes.h"
 #include <sys/mman.h>
 #include <unistd.h>
+#include <linux/input-event-codes.h>
 
 namespace Luna
 {
     wl_seat* Input::seat = nullptr;
     wl_keyboard* Input::keyboard = nullptr;
+    wl_pointer* Input::pointer = nullptr;
     
     bool Input::keys[MAX_KEYS] = {};
     bool Input::ctrl[MAX_KEYS] = {};
+
+    int32 Input::mouseX = 0;
+    int32 Input::mouseY = 0;
+    int16 Input::mouseWheel = 0;
     
     xkb_state* Input::state = nullptr;
     xkb_context* Input::context = nullptr;
@@ -20,6 +26,7 @@ namespace Luna
         xkb_state_unref(state);
         xkb_keymap_unref(keymap);
         xkb_context_unref(context);
+        wl_pointer_destroy(pointer);
         wl_keyboard_destroy(keyboard);
         wl_seat_destroy(seat);
     }
@@ -85,6 +92,52 @@ namespace Luna
             xkb_state_update_mask(state, dep, lat, loc, 0, 0, grp);
     }
 
+    void Input::HandlePointerEnter(void* userData, wl_pointer* pointer, 
+        uint32 serial, wl_surface* surface, wl_fixed_t sx, wl_fixed_t sy)
+    {
+        mouseX = wl_fixed_to_int(sx);
+        mouseY = wl_fixed_to_int(sy);
+    }
+
+    void Input::HandlePointerMotion(void* userData, wl_pointer* pointer, 
+        uint32 time, wl_fixed_t sx, wl_fixed_t sy)
+    {
+        mouseX = wl_fixed_to_int(sx);
+        mouseY = wl_fixed_to_int(sy);
+    }
+
+    void Input::HandlePointerAxis(void* userData, wl_pointer* pointer, 
+        uint32 time, uint32 axis, wl_fixed_t value)
+    {
+        if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
+        {
+            if (wl_fixed_to_int(value) > 0) mouseWheel = -1;
+            else if (wl_fixed_to_int(value) < 0) mouseWheel = 1;
+        }
+    }
+
+    void Input::HandlePointerButton(void* userData, wl_pointer* pointer, 
+        uint32 serial, uint32 time, uint32 button, uint32 state)
+    {
+        uint32 vkCode{};
+
+        switch (button)
+        {
+            case BTN_LEFT:   vkCode = VK_LBUTTON;  break;
+            case BTN_RIGHT:  vkCode = VK_RBUTTON;  break;
+            case BTN_MIDDLE: vkCode = VK_MBUTTON;  break;
+            case BTN_SIDE:   vkCode = VK_XBUTTON1; break;
+            case BTN_EXTRA:  vkCode = VK_XBUTTON2; break;
+        }
+
+        if (vkCode > 0)
+        {
+            auto index = KeysymToKeycode(static_cast<xkb_keysym_t>(vkCode));
+            if (index < MAX_KEYS)
+                keys[index] = (state == WL_POINTER_BUTTON_STATE_PRESSED);
+        }
+    }
+
     void Input::SeatHandleCapabilities(void *userData, wl_seat *seat, uint32 caps) 
     {
         if (!(caps & WL_SEAT_CAPABILITY_KEYBOARD))
@@ -100,6 +153,20 @@ namespace Luna
             .repeat_info = [](void*, wl_keyboard*, int32, int32) {}
         };
         wl_keyboard_add_listener(keyboard, &keyboardListener, nullptr);
+
+        pointer = wl_seat_get_pointer(seat);
+        static const wl_pointer_listener pointerListener = {
+            .enter = HandlePointerEnter,
+            .leave = [](void*, wl_pointer*, uint32, wl_surface*) {},
+            .motion = HandlePointerMotion,
+            .button = HandlePointerButton,
+            .axis = HandlePointerAxis,
+            .frame = [](void*, wl_pointer*) {},
+            .axis_source = [](void*, wl_pointer*, uint32) {},
+            .axis_stop = [](void*, wl_pointer*, uint32, uint32) {},
+            .axis_discrete = [](void*, wl_pointer*, uint32, int32) {}
+        };
+        wl_pointer_add_listener(pointer, &pointerListener, nullptr);
     }
 
     void Input::HandleGlobal(void *userData, wl_registry *registry, 
@@ -150,5 +217,12 @@ namespace Luna
         }
 
         return false;
+    }
+
+    int16 Input::MouseWheel() noexcept
+    {
+        int16 val = mouseWheel;
+        mouseWheel = 0;
+        return val;
     }
 }
