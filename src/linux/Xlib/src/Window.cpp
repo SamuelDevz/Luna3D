@@ -238,7 +238,7 @@ namespace Luna
         X11ChangeProperty(display, window,
             motifwmHints,
             motifwmHints, 
-            (unsigned char*) &hints,
+            reinterpret_cast<unsigned char*>(&hints),
             sizeof(hints) / sizeof(long));
     }
 
