@@ -44,6 +44,12 @@ namespace Luna
 
         do
         {
+            while (wl_display_prepare_read(window->Display()) != 0)
+                wl_display_dispatch_pending(window->Display());
+            wl_display_flush(window->Display());
+            wl_display_read_events(window->Display());
+            wl_display_dispatch_pending(window->Display());
+
             game->Update();
             game->Draw();
         } while (wl_display_dispatch(window->Display()) && !quit);
