@@ -1,5 +1,6 @@
 #include "Input.h"
 #include "KeyCodes.h"
+#include <locale.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <linux/input-event-codes.h>
@@ -12,6 +13,8 @@ namespace Luna
     
     bool Input::keys[MAX_KEYS] = {};
     bool Input::ctrl[MAX_KEYS] = {};
+    string Input::text;
+    bool Input::read = false;
 
     int32 Input::mouseX = 0;
     int32 Input::mouseY = 0;
@@ -21,8 +24,13 @@ namespace Luna
     xkb_context* Input::context = nullptr;
     xkb_keymap* Input::keymap = nullptr;
 
+    xkb_compose_table* Input::composeTable = nullptr;
+    xkb_compose_state* Input::composeState = nullptr;
+
     Input::~Input() noexcept
     {
+        xkb_compose_state_unref(composeState);
+        xkb_compose_table_unref(composeTable);
         xkb_state_unref(state);
         xkb_keymap_unref(keymap);
         xkb_context_unref(context);
@@ -72,6 +80,49 @@ namespace Luna
         }
     }
 
+    void Input::ProcessText(const xkb_keysym_t sym) noexcept
+    {
+        if (!composeState)
+            return;
+
+        if(sym == VK_RETURN || sym == VK_TAB)
+        {
+            read = false;
+            return;
+        }
+
+        if (sym == VK_BACK)
+        {
+            if (!text.empty())
+            {
+                while (!text.empty() && (text.back() & 0xC0) == 0x80) 
+                    text.pop_back();
+                if (!text.empty()) 
+                    text.pop_back();
+            }
+            return;
+        }
+
+        xkb_compose_state_feed(composeState, sym);
+        enum xkb_compose_status status = xkb_compose_state_get_status(composeState);
+
+        char buffer[64]{};
+        
+        if (status == XKB_COMPOSE_COMPOSED) 
+        {
+            int32 len = xkb_compose_state_get_utf8(composeState, buffer, sizeof(buffer));
+            if (len > 0) 
+                text += buffer;
+            xkb_compose_state_reset(composeState);
+        } 
+        else if (status == XKB_COMPOSE_NOTHING) 
+        {
+            int32 len = xkb_keysym_to_utf8(sym, buffer, sizeof(buffer));
+            if (len > 0 && static_cast<unsigned char>(buffer[0]) >= 32)
+                text += buffer;
+        }
+    }
+
     void Input::HandleKeyboardKey(void *userData, wl_keyboard *keyboard, 
         uint32 serial, uint32 time, uint32 key, uint32 state) 
     {
@@ -80,6 +131,9 @@ namespace Luna
         xkb_keysym_t sym = xkb_state_key_get_one_sym(Input::state, keycode);
 
         const bool isPressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
+
+        if(read && isPressed)
+            ProcessText(sym);
 
         if (keycode < MAX_KEYS)
             keys[keycode] = isPressed;
@@ -182,6 +236,8 @@ namespace Luna
     void Input::Initialize(wl_display* display)
     {
         context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+        composeTable = xkb_compose_table_new_from_locale(context, setlocale(LC_CTYPE, nullptr), XKB_COMPOSE_COMPILE_NO_FLAGS);
+        composeState = xkb_compose_state_new(composeTable, XKB_COMPOSE_STATE_NO_FLAGS);
 
         wl_registry* registry = wl_display_get_registry(display);
         static const wl_registry_listener inputListener = {
@@ -224,5 +280,11 @@ namespace Luna
         int16 val = mouseWheel;
         mouseWheel = 0;
         return val;
+    }
+
+    void Input::Read() noexcept
+    {
+        text.clear();
+        read = true;
     }
 }

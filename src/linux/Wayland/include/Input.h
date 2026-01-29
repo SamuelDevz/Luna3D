@@ -4,6 +4,7 @@
 #include "Export.h"
 #include "Window.h"
 #include <xkbcommon/xkbcommon.h>
+#include <xkbcommon/xkbcommon-compose.h>
 
 namespace Luna
 {
@@ -18,6 +19,8 @@ namespace Luna
 
         static bool keys[MAX_KEYS];
         static bool ctrl[MAX_KEYS];
+        static string text;
+        static bool read;
 
         static int32 mouseX;
         static int32 mouseY;
@@ -27,7 +30,12 @@ namespace Luna
         static xkb_keymap* keymap;
         static xkb_state* state;
 
+        static xkb_compose_table * composeTable;
+        static xkb_compose_state * composeState;
+
         static xkb_keycode_t KeysymToKeycode(const xkb_keysym_t keysym) noexcept;
+
+        static void ProcessText(const xkb_keysym_t sym) noexcept;
 
         static void HandleKeyboardKeymap(void *userData, wl_keyboard *keyboard, 
             uint32 format, int32 fd, uint32 size);
@@ -71,6 +79,9 @@ namespace Luna
         int32 MouseX() const noexcept;
         int32 MouseY() const noexcept;
         int16 MouseWheel() noexcept;
+
+        void Read() noexcept;
+        static const char* Text() noexcept;
     };
 
     inline bool Input::KeyDown(const uint32 vkcode) noexcept
@@ -84,4 +95,7 @@ namespace Luna
 
     inline int32 Input::MouseY() const noexcept
     { return mouseY; }
+
+    inline const char* Input::Text() noexcept
+    { return text.c_str(); }
 }
