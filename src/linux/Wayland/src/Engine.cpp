@@ -1,4 +1,7 @@
 #include "Engine.h"
+#include "KeyCodes.h"
+#include <format>
+using std::format;
 
 namespace Luna 
 {
@@ -6,6 +9,9 @@ namespace Luna
     Input*    Engine::input = nullptr;
     Game*     Engine::game = nullptr;
     bool      Engine::quit = false;
+    bool      Engine::paused = false;
+    double    Engine::frameTime = {};
+    Timer     Engine::timer;
 
     Engine::Engine() noexcept
     {
@@ -35,8 +41,38 @@ namespace Luna
         quit = true;
     }
 
+    double Engine::FrameTime() noexcept
+    {
+    #ifdef _DEBUG
+        static double totalTime{};
+        static uint32 frameCount{};
+    #endif
+
+        frameTime = timer.Reset();
+
+    #ifdef _DEBUG
+        totalTime += frameTime;
+
+        frameCount++;
+
+        if (totalTime >= 1.0)
+        {
+            string title = format("{}    FPS: {}    Frame Time: {:.3f} (ms)",
+                window->Title().c_str(), frameCount, frameTime * 1000).c_str();
+
+            xdg_toplevel_set_title(window->XDGTopLevel(), title.c_str());
+
+            frameCount = 0;
+            totalTime -= 1.0;
+        }
+    #endif
+
+        return frameTime;
+    }
+
     int32 Engine::Loop()
     {
+        timer.Start();
         game->Init();
         window->OnClose(Quit);
         window->OnDisplay(Display);
@@ -50,8 +86,19 @@ namespace Luna
             wl_display_read_events(window->Display());
             wl_display_dispatch_pending(window->Display());
 
-            game->Update();
-            game->Draw();
+            if (input->KeyPress(VK_PAUSE))
+                (paused) ? Resume() : Pause();
+
+            if (!paused)
+            {
+                frameTime = FrameTime();
+                game->Update();
+                game->Draw();
+            }
+            else
+            {
+                game->OnPause();
+            }
         } while (wl_display_dispatch(window->Display()) && !quit);
 
         game->Finalize();

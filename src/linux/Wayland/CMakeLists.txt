@@ -1,4 +1,5 @@
 set(SOURCE_FILES src/Input.cpp
+    src/Timer.cpp
     src/Game.cpp
     src/Engine.cpp)
 
