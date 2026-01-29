@@ -17,6 +17,7 @@ namespace Luna
     void (*Window::inFocus)() = nullptr;
     void (*Window::lostFocus)() = nullptr;
     void (*Window::onClose)(void*, xdg_toplevel*) = nullptr;
+    void (*Window::onDisplay)(void*, wl_callback*, uint32) = nullptr;
 
     Window::Window() noexcept
         : registry{nullptr},
@@ -364,6 +365,15 @@ namespace Luna
 
         if(windowMode == FULLSCREEN)
             xdg_toplevel_set_fullscreen(xdgToplevel, nullptr);
+
+        static const wl_callback_listener surfaceFrameListener = {
+            .done = [](void* data, wl_callback * callback, uint32 time) {
+                if(onDisplay) onDisplay(nullptr, callback, 0);
+            }
+        };
+
+        wl_callback * callback = wl_surface_frame(window);
+	    wl_callback_add_listener(callback, &surfaceFrameListener, nullptr);
 
         if(windowMode != BORDERLESS)
         {

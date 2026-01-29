@@ -14,6 +14,7 @@ namespace Luna
 
         static bool quit;
         static void Quit(void *data, struct xdg_toplevel *toplevel);
+        static void Display(void *data, wl_callback *callback, uint32 time);
 
     public:
         static Window * window;

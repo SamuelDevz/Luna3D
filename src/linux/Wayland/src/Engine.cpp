@@ -39,6 +39,7 @@ namespace Luna
     {
         game->Init();
         window->OnClose(Quit);
+        window->OnDisplay(Display);
         input->Initialize(window->Display());
 
         do
@@ -50,5 +51,19 @@ namespace Luna
         game->Finalize();
 
         return 0;
+    }
+
+    void Engine::Display(void *data, wl_callback *callback, uint32 time)
+    {
+        wl_callback_destroy(callback);
+        game->Display();
+        
+        static const wl_callback_listener frameListener = {
+            .done = Display
+        };
+        
+        wl_callback *nextCallback = wl_surface_frame(window->Surface());
+        wl_callback_add_listener(nextCallback, &frameListener, nullptr);
+        wl_surface_commit(window->Surface());
     }
 }
