@@ -1,10 +1,13 @@
 #include "WinGame.h"
 #include "Resource.h"
+#include "MessageBox.h"
 
 int main()
 {
     using namespace Luna;
-/*
+
+    MessageBox("Window Game", "Welcome to the simple window game!");
+    
 #ifdef _DEBUG
 
     try
@@ -32,7 +35,7 @@ int main()
     }
 
 #else
-*/
+
     Engine * engine = new Engine();
     engine->window->Mode(WINDOWED);
     engine->window->Size(800, 600);
@@ -49,5 +52,5 @@ int main()
 
     return exit;
 
-// #endif
+#endif
 }
