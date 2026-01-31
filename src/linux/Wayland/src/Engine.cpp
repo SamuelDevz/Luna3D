@@ -1,5 +1,7 @@
 #include "Engine.h"
 #include "KeyCodes.h"
+#include <cstdio>
+#include <cstdarg>
 #include <format>
 using std::format;
 
@@ -13,8 +15,15 @@ namespace Luna
     double    Engine::frameTime = {};
     Timer     Engine::timer;
 
+    static void WaylandLogHandler(const char* fmt, va_list args) 
+    {
+        vfprintf(stderr, fmt, args);
+        fprintf(stderr, "\n");
+    }
+
     Engine::Engine() noexcept
     {
+        wl_log_set_handler_client(WaylandLogHandler);
         window = new Window();
     }
 

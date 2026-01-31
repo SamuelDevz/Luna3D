@@ -18,9 +18,9 @@ add_library(protocols STATIC src/xdg-shell-client-protocol.c
     src/xdg-decoration-unstable-v1.c)
 
 if(SHARED_LIBRARIES)
-    add_library(window SHARED src/Window.cpp)
+    add_library(window SHARED src/Error.cpp src/MessageBox.cpp src/Window.cpp)
 else()
-    add_library(window STATIC src/Window.cpp)
+    add_library(window STATIC src/Error.cpp src/MessageBox.cpp src/Window.cpp)
 endif()
 
 target_link_libraries(window PUBLIC protocols)
