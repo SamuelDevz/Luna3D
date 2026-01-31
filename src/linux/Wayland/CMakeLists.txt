@@ -30,8 +30,6 @@ target_include_directories(window PUBLIC include ${WAYLAND_INCLUDE_DIRS} ${XKBCO
 target_link_libraries(window PUBLIC PkgConfig::WAYLAND PkgConfig::XKBCOMMON)
 target_compile_definitions(window PUBLIC $<IF:$<CONFIG:DEBUG>,_DEBUG,NDEBUG>)
 
-target_compile_options(window PUBLIC -g)
-
 # engine library
 if(SHARED_LIBRARIES)
     add_library(engine SHARED ${SOURCE_FILES})
