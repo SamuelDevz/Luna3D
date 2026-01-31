@@ -14,8 +14,9 @@ pkg_check_modules(XKBCOMMON REQUIRED IMPORTED_TARGET
 )
 
 # window library
-add_library(protocols STATIC src/xdg-shell-client-protocol.c
-    src/xdg-decoration-unstable-v1.c)
+add_library(protocols STATIC src/xdg-shell-client-protocol.cpp
+    src/xdg-decoration-unstable-v1.cpp)
+target_include_directories(protocols PUBLIC include)
 
 if(SHARED_LIBRARIES)
     add_library(window SHARED src/Error.cpp src/MessageBox.cpp src/Window.cpp)
