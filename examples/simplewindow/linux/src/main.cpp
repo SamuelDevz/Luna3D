@@ -6,8 +6,6 @@ int main()
 {
     using namespace Luna;
 
-    MessageBox("Window Game", "Welcome to the simple window game!");
-    
 #ifdef _DEBUG
 
     try
