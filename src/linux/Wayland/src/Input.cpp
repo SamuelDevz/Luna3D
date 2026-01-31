@@ -1,0 +1,290 @@
+#include "Input.h"
+#include "KeyCodes.h"
+#include <locale.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <linux/input-event-codes.h>
+
+namespace Luna
+{
+    wl_seat* Input::seat = nullptr;
+    wl_keyboard* Input::keyboard = nullptr;
+    wl_pointer* Input::pointer = nullptr;
+    
+    bool Input::keys[MAX_KEYS] = {};
+    bool Input::ctrl[MAX_KEYS] = {};
+    string Input::text;
+    bool Input::read = false;
+
+    int32 Input::mouseX = 0;
+    int32 Input::mouseY = 0;
+    int16 Input::mouseWheel = 0;
+    
+    xkb_state* Input::state = nullptr;
+    xkb_context* Input::context = nullptr;
+    xkb_keymap* Input::keymap = nullptr;
+
+    xkb_compose_table* Input::composeTable = nullptr;
+    xkb_compose_state* Input::composeState = nullptr;
+
+    Input::~Input() noexcept
+    {
+        xkb_compose_state_unref(composeState);
+        xkb_compose_table_unref(composeTable);
+        xkb_state_unref(state);
+        xkb_keymap_unref(keymap);
+        xkb_context_unref(context);
+        wl_pointer_destroy(pointer);
+        wl_keyboard_destroy(keyboard);
+        wl_seat_destroy(seat);
+    }
+
+    xkb_keycode_t Input::KeysymToKeycode(const xkb_keysym_t keysym) noexcept
+    {
+        if (!keymap || !state) 
+            return 0;
+
+        for (xkb_keycode_t i = 8; i < MAX_KEYS; ++i)
+            if (xkb_state_key_get_one_sym(state, i) == keysym) 
+                return i;
+        return 0;
+    }
+
+    void Input::HandleKeyboardKeymap(void *userData, wl_keyboard *keyboard, 
+        uint32 format, int32 fd, uint32 size) 
+    {
+        char *mapStr = static_cast<char*>(mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0));
+        
+        if (mapStr == MAP_FAILED) {
+            close(fd);
+            return;
+        }
+
+        xkb_keymap *newMap = xkb_keymap_new_from_string(
+            context, 
+            mapStr, 
+            XKB_KEYMAP_FORMAT_TEXT_V1, 
+            XKB_KEYMAP_COMPILE_NO_FLAGS
+        );
+        
+        munmap(mapStr, size);
+        close(fd);
+
+        if (newMap) 
+        {
+            if (state) xkb_state_unref(state);
+            if (keymap) xkb_keymap_unref(keymap);
+
+            keymap = newMap;
+            state = xkb_state_new(newMap);
+        }
+    }
+
+    void Input::ProcessText(const xkb_keysym_t sym) noexcept
+    {
+        if (!composeState)
+            return;
+
+        if(sym == VK_RETURN || sym == VK_TAB)
+        {
+            read = false;
+            return;
+        }
+
+        if (sym == VK_BACK)
+        {
+            if (!text.empty())
+            {
+                while (!text.empty() && (text.back() & 0xC0) == 0x80) 
+                    text.pop_back();
+                if (!text.empty()) 
+                    text.pop_back();
+            }
+            return;
+        }
+
+        xkb_compose_state_feed(composeState, sym);
+        enum xkb_compose_status status = xkb_compose_state_get_status(composeState);
+
+        char buffer[64]{};
+        
+        if (status == XKB_COMPOSE_COMPOSED) 
+        {
+            int32 len = xkb_compose_state_get_utf8(composeState, buffer, sizeof(buffer));
+            if (len > 0) 
+                text += buffer;
+            xkb_compose_state_reset(composeState);
+        } 
+        else if (status == XKB_COMPOSE_NOTHING) 
+        {
+            int32 len = xkb_keysym_to_utf8(sym, buffer, sizeof(buffer));
+            if (len > 0 && static_cast<unsigned char>(buffer[0]) >= 32)
+                text += buffer;
+        }
+    }
+
+    void Input::HandleKeyboardKey(void *userData, wl_keyboard *keyboard, 
+        uint32 serial, uint32 time, uint32 key, uint32 state) 
+    {
+        const constexpr uint32 XKB_KEYCODE_OFFSET = 8;
+        xkb_keycode_t keycode = key + XKB_KEYCODE_OFFSET;
+        xkb_keysym_t sym = xkb_state_key_get_one_sym(Input::state, keycode);
+
+        const bool isPressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
+
+        if(read && isPressed)
+            ProcessText(sym);
+
+        if (keycode < MAX_KEYS)
+            keys[keycode] = isPressed;
+    }
+
+    void Input::HandleKeyboardModifiers(void *userData, wl_keyboard *keyboard, 
+        uint32 serial, uint32 dep, uint32 lat, uint32 loc, uint32 grp) 
+    {
+        if (state)
+            xkb_state_update_mask(state, dep, lat, loc, 0, 0, grp);
+    }
+
+    void Input::HandlePointerEnter(void* userData, wl_pointer* pointer, 
+        uint32 serial, wl_surface* surface, wl_fixed_t sx, wl_fixed_t sy)
+    {
+        mouseX = wl_fixed_to_int(sx);
+        mouseY = wl_fixed_to_int(sy);
+    }
+
+    void Input::HandlePointerMotion(void* userData, wl_pointer* pointer, 
+        uint32 time, wl_fixed_t sx, wl_fixed_t sy)
+    {
+        mouseX = wl_fixed_to_int(sx);
+        mouseY = wl_fixed_to_int(sy);
+    }
+
+    void Input::HandlePointerAxis(void* userData, wl_pointer* pointer, 
+        uint32 time, uint32 axis, wl_fixed_t value)
+    {
+        if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
+        {
+            if (wl_fixed_to_int(value) > 0) mouseWheel = -1;
+            else if (wl_fixed_to_int(value) < 0) mouseWheel = 1;
+        }
+    }
+
+    void Input::HandlePointerButton(void* userData, wl_pointer* pointer, 
+        uint32 serial, uint32 time, uint32 button, uint32 state)
+    {
+        uint32 vkCode{};
+
+        switch (button)
+        {
+            case BTN_LEFT:   vkCode = VK_LBUTTON;  break;
+            case BTN_RIGHT:  vkCode = VK_RBUTTON;  break;
+            case BTN_MIDDLE: vkCode = VK_MBUTTON;  break;
+            case BTN_SIDE:   vkCode = VK_XBUTTON1; break;
+            case BTN_EXTRA:  vkCode = VK_XBUTTON2; break;
+        }
+
+        if (vkCode > 0)
+        {
+            auto index = KeysymToKeycode(static_cast<xkb_keysym_t>(vkCode));
+            if (index < MAX_KEYS)
+                keys[index] = (state == WL_POINTER_BUTTON_STATE_PRESSED);
+        }
+    }
+
+    void Input::SeatHandleCapabilities(void *userData, wl_seat *seat, uint32 caps) 
+    {
+        if (!(caps & WL_SEAT_CAPABILITY_KEYBOARD))
+            return;
+    
+        keyboard = wl_seat_get_keyboard(seat);
+        static const wl_keyboard_listener keyboardListener = {
+            .keymap = HandleKeyboardKeymap,
+            .enter = [](void*, wl_keyboard*, uint32, wl_surface*, wl_array*) {},
+            .leave = [](void*, wl_keyboard*, uint32, wl_surface*) {},
+            .key = HandleKeyboardKey,
+            .modifiers = HandleKeyboardModifiers,
+            .repeat_info = [](void*, wl_keyboard*, int32, int32) {}
+        };
+        wl_keyboard_add_listener(keyboard, &keyboardListener, nullptr);
+
+        pointer = wl_seat_get_pointer(seat);
+        static const wl_pointer_listener pointerListener = {
+            .enter = HandlePointerEnter,
+            .leave = [](void*, wl_pointer*, uint32, wl_surface*) {},
+            .motion = HandlePointerMotion,
+            .button = HandlePointerButton,
+            .axis = HandlePointerAxis,
+            .frame = [](void*, wl_pointer*) {},
+            .axis_source = [](void*, wl_pointer*, uint32) {},
+            .axis_stop = [](void*, wl_pointer*, uint32, uint32) {},
+            .axis_discrete = [](void*, wl_pointer*, uint32, int32) {}
+        };
+        wl_pointer_add_listener(pointer, &pointerListener, nullptr);
+    }
+
+    void Input::HandleGlobal(void *userData, wl_registry *registry, 
+        uint32 id, const char *interface, uint32 version)
+    {
+        const string _interface(interface);
+        if (_interface == wl_seat_interface.name)
+        {
+            seat = static_cast<wl_seat*>(wl_registry_bind(registry, id, &wl_seat_interface, 7));
+        }
+    }
+
+    void Input::Initialize(wl_display* display)
+    {
+        context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+        composeTable = xkb_compose_table_new_from_locale(context, setlocale(LC_CTYPE, nullptr), XKB_COMPOSE_COMPILE_NO_FLAGS);
+        composeState = xkb_compose_state_new(composeTable, XKB_COMPOSE_STATE_NO_FLAGS);
+
+        wl_registry* registry = wl_display_get_registry(display);
+        static const wl_registry_listener inputListener = {
+            .global = HandleGlobal,
+            .global_remove = [](void*, wl_registry*, uint32) {}
+        };
+        wl_registry_add_listener(registry, &inputListener, nullptr);
+        wl_display_roundtrip(display);
+
+        static const wl_seat_listener seatListener = {
+            .capabilities = SeatHandleCapabilities,
+            .name = [](void*, wl_seat*, const char*) {}
+        };
+        wl_seat_add_listener(seat, &seatListener, nullptr);
+        wl_display_roundtrip(display);
+    }
+
+    bool Input::KeyPress(const uint32 vkcode) noexcept
+    {
+        auto keycode = KeysymToKeycode(vkcode);
+
+        if (ctrl[keycode])
+        {
+            if (KeyDown(vkcode))
+            {
+                ctrl[keycode] = false;
+                return true;
+            }
+        }
+        else if (KeyUp(vkcode))
+        {
+            ctrl[keycode] = true;
+        }
+
+        return false;
+    }
+
+    int16 Input::MouseWheel() noexcept
+    {
+        int16 val = mouseWheel;
+        mouseWheel = 0;
+        return val;
+    }
+
+    void Input::Read() noexcept
+    {
+        text.clear();
+        read = true;
+    }
+}

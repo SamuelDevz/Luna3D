@@ -1,5 +1,6 @@
 #include "WinGame.h"
 #include "Resource.h"
+#include "MessageBox.h"
 
 int main()
 {
