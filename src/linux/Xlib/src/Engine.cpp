@@ -1,5 +1,6 @@
 #include "Engine.h"
 #include "KeyCodes.h"
+#include <X11/Xatom.h>
 #include <format>
 using std::format;
 
@@ -51,9 +52,32 @@ namespace Luna
 
         if (totalTime >= 1.0)
         {
-            XStoreName(window->XDisplay(), window->Id(), 
-                format("{}    FPS: {}    Frame Time: {:.3f} (ms)",
-                    window->Title().c_str(), frameCount, frameTime * 1000).c_str()
+            string titleStr = format("{}    FPS: {}    Frame Time: {:.3f} (ms)",
+                window->Title().c_str(), frameCount, frameTime * 1000);
+
+            static Atom netWmName = XInternAtom(window->XDisplay(), "_NET_WM_NAME", false);
+            static Atom utf8String = XInternAtom(window->XDisplay(), "UTF8_STRING", false);
+
+            XChangeProperty(
+                window->XDisplay(),
+                window->Id(),
+                netWmName,
+                utf8String,
+                8,
+                PropModeReplace,
+                reinterpret_cast<const unsigned char*>(titleStr.c_str()),
+                static_cast<int32>(titleStr.size())
+            );
+
+            XChangeProperty(
+                window->XDisplay(),
+                window->Id(),
+                XA_WM_NAME,
+                XA_STRING,
+                8,
+                PropModeReplace,
+                reinterpret_cast<const unsigned char*>(titleStr.c_str()),
+                static_cast<int32>(titleStr.size())
             );
 
             frameCount = 0;
