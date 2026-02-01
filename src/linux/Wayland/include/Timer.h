@@ -10,9 +10,13 @@ namespace Luna
     {
     private:
         timespec start, end;
-        static inline uint64 freq;
-        clockid_t clock;
+        clockid_t clock_id;
         bool stopped;
+
+        static inline uint64 freq;
+
+        inline int64 GetNanoseconds(const timespec& ts) const noexcept 
+        { return (static_cast<int64>(ts.tv_sec) * freq) + ts.tv_nsec; }
 
     public:
         explicit Timer() noexcept;
@@ -29,14 +33,14 @@ namespace Luna
     };
 
     inline bool Timer::Elapsed(const float time) noexcept
-    { return (Elapsed() >= time ? true : false); }
+    { return (Elapsed() >= time); }
 
     inline bool Timer::Elapsed(const int64 stamp, const float time) noexcept
-    { return (Elapsed(stamp) >= time ? true : false); }
+    { return (Elapsed(stamp) >= time); }
 
     inline int64 Timer::Stamp() noexcept
     {
-        clock_gettime(clock, &end);
-        return end.tv_sec * freq + end.tv_nsec;
+        clock_gettime(clock_id, &end);
+        return GetNanoseconds(end);
     }
 }
