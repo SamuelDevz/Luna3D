@@ -3,7 +3,7 @@
 #include "Types.h"
 #include "Export.h"
 
-typedef struct _XDisplay Display;
+using Display = struct _XDisplay;
 
 namespace Luna
 {
