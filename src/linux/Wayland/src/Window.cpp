@@ -237,8 +237,6 @@ namespace Luna
     /***********Registry***********/
     /******************************/
 
-    static void RegistryGlobalRemove(void *userData, wl_registry *registry, uint32 id) {}
-
     void Window::RegistryHandleGlobal(void *userData, wl_registry *registry,
         uint32 id, const char *interface, uint32 version)
     {
@@ -310,7 +308,7 @@ namespace Luna
 
         const wl_registry_listener registryListener = {
             .global = RegistryHandleGlobal,
-            .global_remove = RegistryGlobalRemove,
+            .global_remove = [](void*, wl_registry*, uint32){},
         };
 
         registry = wl_display_get_registry(display);
