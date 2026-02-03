@@ -107,18 +107,18 @@ namespace Luna
 
             constexpr const uint32 BytesinMegaByte = 1048576U; // 1'048'576
 
-            Graphics::logger.OutputDebug(LOG_LEVEL_INFO, 
-                format("---> Video memory (size total): {}MB\n", 
+            Graphics::logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
+                format("---> Video memory (size total): {}MB", 
                     memoryTotalsize / BytesinMegaByte)
             );
 
-            Graphics::logger.OutputDebug(LOG_LEVEL_INFO, 
-                format("---> Video memory (budget total): {}MB\n", 
+            Graphics::logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
+                format("---> Video memory (budget total): {}MB", 
                     memoryTotalBudget / BytesinMegaByte)
             );
                 
-            Graphics::logger.OutputDebug(LOG_LEVEL_INFO, 
-                format("---> Video memory (usage total): {}MB\n", 
+            Graphics::logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
+                format("---> Video memory (usage total): {}MB", 
                     memoryTotalUsage / BytesinMegaByte)
             );
         }
@@ -136,9 +136,9 @@ namespace Luna
         vector<VkLayerProperties> instanceLayers(layerCount);
         VkThrowIfFailed(vkEnumerateInstanceLayerProperties(&layerCount, instanceLayers.data()))
         
-        logger.OutputDebug(LOG_LEVEL_INFO, format("---> {} Instance Layer:\n", layerCount));
+        logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("---> {} Instance Layer:", layerCount));
         for (const auto& layer : instanceLayers)
-            logger.OutputDebug(LOG_LEVEL_INFO, format("\t{}\n", layer.layerName));
+            logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("\t{}", layer.layerName));
 
         // --------------------------------------
         // Instance Extensions
@@ -150,9 +150,9 @@ namespace Luna
         vector<VkExtensionProperties> instanceExtensions(extensionCount);
         VkThrowIfFailed(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, instanceExtensions.data()))
         
-        logger.OutputDebug(LOG_LEVEL_INFO, format("---> {} Instance Extensions:\n", extensionCount));
+        logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("---> {} Instance Extensions:", extensionCount));
         for (const auto& extension : instanceExtensions)
-            logger.OutputDebug(LOG_LEVEL_INFO, format("\t{}\n", extension.extensionName));
+            logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("\t{}", extension.extensionName));
 
         // --------------------------------------
         // Device Extensions
@@ -178,8 +178,8 @@ namespace Luna
         {
             VkPhysicalDeviceProperties deviceProperties;
             vkGetPhysicalDeviceProperties(gpus[i], &deviceProperties);
-            logger.OutputDebug(LOG_LEVEL_INFO, 
-                format("---> Video adapter (GPU) {}: {}\n", 
+            logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
+                format("---> Video adapter (GPU) {}: {}", 
                     i + 1, deviceProperties.deviceName)
             );
 
@@ -188,27 +188,27 @@ namespace Luna
             switch (deviceProperties.deviceType)
             {
                 case VK_PHYSICAL_DEVICE_TYPE_OTHER:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Other\n");
+                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> Other");
                     break;
                 case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Integrated GPU\n");
+                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> Integrated GPU");
                     break;
                 case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Discrete GPU\n");
+                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> Discrete GPU");
                     break;
                 case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Virtual GPU\n");
+                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> Virtual GPU");
                     break;
                 case VK_PHYSICAL_DEVICE_TYPE_CPU:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> CPU\n");
+                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> CPU");
                     break;
                 default:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Unknown device type\n");
+                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> Unknown device type");
                     break;
             }
             
-            logger.OutputDebug(LOG_LEVEL_INFO, 
-                format("---> Feature Level: {}.{}.{}\n", 
+            logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
+                format("---> Feature Level: {}.{}.{}", 
                     VK_API_VERSION_MAJOR(deviceProperties.apiVersion),
                     VK_API_VERSION_MINOR(deviceProperties.apiVersion),
                     VK_API_VERSION_PATCH(deviceProperties.apiVersion))
@@ -225,7 +225,7 @@ namespace Luna
         while (EnumDisplayDevices(nullptr, deviceNum, &dd, 0)) 
         {
             if (dd.StateFlags & DISPLAY_DEVICE_ACTIVE) 
-                logger.OutputDebug(LOG_LEVEL_INFO, format("---> Monitor: {}\n", dd.DeviceName));
+                logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("---> Monitor: {}", dd.DeviceName));
             deviceNum++;
         }
 
@@ -242,8 +242,8 @@ namespace Luna
 		EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &devMode);
 		uint32 refreshRate = devMode.dmDisplayFrequency;
 
-		logger.OutputDebug(LOG_LEVEL_INFO, 
-            format("---> Resolution: {}x{} {}Hz\n", 
+		logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
+            format("---> Resolution: {}x{} {}Hz", 
                 screenWidth, screenHeight, refreshRate)
         );
     }
