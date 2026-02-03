@@ -12,18 +12,16 @@ namespace Luna
     Renderer::Renderer() noexcept
         : graphics{nullptr},
         pipeline{nullptr},
-        pipelineLayout{nullptr},
-        vertexBuffer{nullptr},
-        vertexBufferMemory{nullptr}
+        pipelineLayout{nullptr}
     {
+        geometry = new Mesh("Triangle");
     }
 
     Renderer::~Renderer()
     {
         graphics->ResetCommands();
 
-        vkDestroyBuffer(graphics->Device(), vertexBuffer, nullptr);
-        vkFreeMemory(graphics->Device(), vertexBufferMemory, nullptr);
+        SafeDelete(geometry);
         
         vkDestroyPipelineLayout(graphics->Device(), pipelineLayout, nullptr);
         vkDestroyPipeline(graphics->Device(), pipeline, nullptr);
@@ -63,29 +61,27 @@ namespace Luna
 
     void Renderer::BuildVertexBuffer(const Vertex* vertices, const uint32 count)
     {
-        uint32 vertexBufferSize = sizeof(Vertex) * count;
+        VkDeviceSize vertexBufferSize = sizeof(Vertex) * count;
 
-        VkBuffer stagingBuffer = nullptr;
-        VkDeviceMemory stagingBufferMemory = nullptr;
-
-        graphics->Allocate(vertexBufferSize,
+        graphics->Allocate(
+            vertexBufferSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            &stagingBuffer,
-            &stagingBufferMemory);
+            &geometry->vertexBufferUpload,
+            &geometry->vertexBufferUploadMemory
+        );
 
-        graphics->Copy(vertices, vertexBufferSize, stagingBufferMemory);
+        graphics->Copy(vertices, vertexBufferSize, geometry->vertexBufferUploadMemory);
 
-        graphics->Allocate(vertexBufferSize,
+        graphics->Allocate(
+            vertexBufferSize,
             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            &vertexBuffer,
-            &vertexBufferMemory);
+            &geometry->vertexBuffer,
+            &geometry->vertexBufferMemory
+        );
 
-        graphics->Copy(vertexBuffer, stagingBuffer, vertexBufferSize);
-
-        vkDestroyBuffer(graphics->Device(), stagingBuffer, nullptr);
-        vkFreeMemory(graphics->Device(), stagingBufferMemory, nullptr);
+        graphics->Copy(geometry->vertexBuffer, geometry->vertexBufferUpload, vertexBufferSize);
     }
 
     void Renderer::Initialize(Graphics* graphics, const Vertex * vertices, const uint32 verticesCount)
@@ -248,6 +244,6 @@ namespace Luna
         vkCmdBindPipeline(graphics->CommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
         
         VkDeviceSize offset{};
-        vkCmdBindVertexBuffers(graphics->CommandBuffer(), 0, 1, &vertexBuffer, &offset);
+        vkCmdBindVertexBuffers(graphics->CommandBuffer(), 0, 1, &geometry->vertexBuffer, &offset);
     }
 }

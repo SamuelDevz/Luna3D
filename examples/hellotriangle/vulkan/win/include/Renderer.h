@@ -1,6 +1,7 @@
 #pragma once
 
 #include "All.h"
+#include "Mesh.h"
 #include <glm/glm.hpp>
 
 namespace Luna
@@ -18,11 +19,10 @@ namespace Luna
     {
     private:
         Graphics                * graphics;
+        Mesh                    * geometry;
 
         VkPipeline                pipeline;
         VkPipelineLayout          pipelineLayout;
-        VkBuffer                  vertexBuffer;
-        VkDeviceMemory            vertexBufferMemory;
 
         void BuildVertexBuffer(const Vertex* vertices, const uint32 count);
         
