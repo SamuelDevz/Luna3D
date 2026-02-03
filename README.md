@@ -39,25 +39,12 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 
 ### Linux
 
-#### XLib
+#### Dependências por Interface:
+- XLib (X11): libx11-dev, libxfixes-dev, libxcursor-dev, libpng-dev.
+- XCB: libxcb1-dev, libxcb-icccm4-dev, libxcb-fixes0-dev, libxcb-errors-dev, libxkbcommon-dev.
+- Wayland: libwayland-dev, wayland-protocols, libxkbcommon-dev, zenity.
 
-- X11
-- x11-fixes
-- Xcursor
-- png
-
-#### XCB
-
-- xcb
-- x11-xcb
-- xcb-fixes
-- xcb-icccm
-- Xcursor
-- png
-- xkbcommon
-- xcb-errors
-
-**OBS:** Tu precisa do arquivo no formato Xcursor para mudar o cursor da janela. Uma dica seria pegar um arquivo .CUR e converte-lo usando [win2xcur](https://github.com/quantum5/win2xcur)
+> Dica de Cursor: O Linux utiliza o formato Xcursor. Você pode converter arquivos .cur do Windows usando a ferramenta win2xcur.
 
 #### Wayland
 
@@ -73,7 +60,7 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 - [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
     - GLM Headers
 
-### Configuração e Construção do projeto
+### Configuração e Build
 
 1. Clone o repositório.
 
@@ -82,35 +69,25 @@ https://github.com/SamuelDevz/Luna3D.git
 cd Luna3D
 ```
 
-2. Construa o projeto usando os comandos do cmake.
+2. Gere os arquivos de build e compile:
 
-```bash
-cmake -B build [flag(s)]
-cmake --build build [Release/Debug]
-```
-
-### Definições de pré-processador
-
-| Opções do CMake    | Descrição                           | Valor|
-|:------------------:|:-----------------------------------:|:----:|
-| `BUILD_EXAMPLES`   | Build examples of the project.      | OFF  |
-| `SHARED_LIBRARIES` | Use the shared libs in the project. | OFF  |
-
-| Bibliotecas        | Plataforma      | Descrição                           | Valor |
-|:------------------:|:---------------:|:-----------------------------------:|:-----:|
-| `BUILD_X11`        | Linux           | Build the engine using Xlib.        | OFF   |
-| `BUILD_XCB`        | Linux           | Build the engine using XCB.         | OFF   |
-| `BUILD_WAYLAND`    | Linux           | Build the engine using Wayland.     | OFF   |
-| `BUILD_DIRECT3D11` | Windows         | Build the engine using Direct3D 11. | OFF   |
-| `BUILD_DIRECT3D12` | Windows         | Build the engine using Direct3D 12. | OFF   |
-| `BUILD_VULKAN`     | Windows / Linux | Build the engine using Vulkan.      | OFF   |
-
-Para habilitar esses definições você deve habilitar no local onde está as flag(s) acima. Aqui um exemplo:
-
+Substitua as flags conforme sua necessidade (veja a tabela abaixo).
 ```bash
 cmake -B build -DBUILD_EXAMPLES=ON -DBUILD_DIRECT3D12=ON
-cmake --build build
+cmake --build build --config Release
 ```
+### Variáveis de Compilação (CMake Flags)
+
+| Opção            | Descrição                          | Padrão |
+|------------------|:-----------------------------------|:------:|
+| BUILD_EXAMPLES   | Compila os projetos de exemplo.    | OFF    |
+| SHARED_LIBRARIES | Compila como libs dinâmicas.       | OFF    |
+| BUILD_X11        | Build usando Xlib (Linux).         | OFF    |
+| BUILD_XCB        | Build usando XCB (Linux).          | OFF    |
+| BUILD_WAYLAND    | Build usando Wayland (Linux).      | OFF    |
+| BUILD_VULKAN     | Build usando Vulkan (Win/Linux).   | OFF    |
+| BUILD_DIRECT3D11 | Build usando D3D11 (Windows).      | OFF    |
+| BUILD_DIRECT3D12 | Build usando D3D12 (Windows).      | OFF    |
 
 ## 🤝 Como Contribuir
 
