@@ -63,6 +63,7 @@ namespace Luna
     {
         VkDeviceSize vertexBufferSize = sizeof(Vertex) * count;
 
+        geometry->device = graphics->Device();
         graphics->Allocate(
             vertexBufferSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -82,6 +83,11 @@ namespace Luna
         );
 
         graphics->Copy(geometry->vertexBuffer, geometry->vertexBufferUpload, vertexBufferSize);
+
+        vkDestroyBuffer(graphics->Device(), geometry->vertexBufferUpload, nullptr);
+        vkFreeMemory(graphics->Device(), geometry->vertexBufferUploadMemory, nullptr);
+        geometry->vertexBufferUpload = nullptr;
+        geometry->vertexBufferUploadMemory = nullptr;
     }
 
     void Renderer::Initialize(Graphics* graphics, const Vertex * vertices, const uint32 verticesCount)

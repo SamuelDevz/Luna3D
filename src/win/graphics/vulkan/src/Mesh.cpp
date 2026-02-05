@@ -15,9 +15,6 @@ namespace Luna
     
     Mesh::~Mesh() noexcept
     {
-        vkDestroyBuffer(device, vertexBufferUpload, nullptr);
-	    vkFreeMemory(device, vertexBufferUploadMemory, nullptr);
-
         vkDestroyBuffer(device, vertexBuffer, nullptr);
 	    vkFreeMemory(device, vertexBufferMemory, nullptr);
     }
