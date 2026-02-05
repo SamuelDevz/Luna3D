@@ -63,7 +63,7 @@ namespace Luna
         void Initialize(const Window* const window);
         void Present();
 
-        void ResetCommands() const noexcept;
+        void ResetCommands() const;
         void BeginCommandRecording() const;
         void EndCommandRecording() const;
 
