@@ -131,10 +131,10 @@ namespace Luna
         // --------------------------------------
         
         uint32 layerCount{};
-        VkThrowIfFailed(vkEnumerateInstanceLayerProperties(&layerCount, nullptr))
+        VkThrowIfFailed(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
 
         vector<VkLayerProperties> instanceLayers(layerCount);
-        VkThrowIfFailed(vkEnumerateInstanceLayerProperties(&layerCount, instanceLayers.data()))
+        VkThrowIfFailed(vkEnumerateInstanceLayerProperties(&layerCount, instanceLayers.data()));
         
         logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("---> {} Instance Layer:", layerCount));
         for (const auto& layer : instanceLayers)
@@ -145,10 +145,10 @@ namespace Luna
         // --------------------------------------
 
         uint32 extensionCount{};
-        VkThrowIfFailed(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr))
+        VkThrowIfFailed(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
 
         vector<VkExtensionProperties> instanceExtensions(extensionCount);
-        VkThrowIfFailed(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, instanceExtensions.data()))
+        VkThrowIfFailed(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, instanceExtensions.data()));
         
         logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("---> {} Instance Extensions:", extensionCount));
         for (const auto& extension : instanceExtensions)
@@ -162,17 +162,17 @@ namespace Luna
         VkThrowIfFailed(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, nullptr));
         
         vector<VkExtensionProperties> deviceExtensions(deviceExtensionCount);
-        VkThrowIfFailed(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, deviceExtensions.data()))
+        VkThrowIfFailed(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, deviceExtensions.data()));
 
 		// --------------------------------------
 		// Video adapter (GPUs)
 		// --------------------------------------
 		
         uint32 gpuCount{};
-        vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr);
+        VkThrowIfFailed(vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr));
 
         vector<VkPhysicalDevice> gpus(gpuCount);
-        vkEnumeratePhysicalDevices(instance, &gpuCount, gpus.data());
+        VkThrowIfFailed(vkEnumeratePhysicalDevices(instance, &gpuCount, gpus.data()));
 
         for (size_t i = 0; i < gpuCount; ++i)
         {
@@ -392,10 +392,10 @@ namespace Luna
             swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 
             uint32_t presentModeCount{};
-            vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+            VkThrowIfFailed(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr));
 
             vector<VkPresentModeKHR> presentModes(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data());
+            VkThrowIfFailed(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data()));
         
             for (uint32_t i = 0; i < presentModeCount; ++i)
             {
@@ -575,11 +575,11 @@ namespace Luna
         bgColor.float32[3] = 1.0f;
     }
 
-    void Graphics::ResetCommands() const noexcept
+    void Graphics::ResetCommands() const
     {
-        vkWaitForFences(device, 1, &fence, true, UINT64_MAX);
-        vkResetFences(device, 1, &fence);
-        vkResetCommandBuffer(commandBuffer, 0);
+        VkThrowIfFailed(vkWaitForFences(device, 1, &fence, true, UINT64_MAX));
+        VkThrowIfFailed(vkResetFences(device, 1, &fence));
+        VkThrowIfFailed(vkResetCommandBuffer(commandBuffer, 0));
     }
 
     void Graphics::BeginCommandRecording() const
@@ -590,7 +590,7 @@ namespace Luna
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        VkThrowIfFailed(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
         VkClearValue clearValue{};
         clearValue.color = bgColor;
