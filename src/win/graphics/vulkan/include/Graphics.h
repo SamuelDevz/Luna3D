@@ -46,7 +46,7 @@ namespace Luna
         VkFence                      fence;
 
         bool WaitCommandQueue() noexcept;
-        void LogHardwareInfo();
+        void LogHardwareInfo() const;
 
         ValidationLayer * validationlayer;
 
@@ -67,24 +67,24 @@ namespace Luna
         void BeginCommandRecording() const;
         void EndCommandRecording() const;
 
-        void Allocate(VkDeviceSize size,
-            uint32 typeFilter,
+        void Allocate(const VkDeviceSize size,
+            const uint32 typeFilter,
             VkMemoryPropertyFlags properties,
             VkDeviceMemory* bufferMemory);
 
-        void Allocate(VkDeviceSize size,
-            VkBufferUsageFlags usageFlags,
-            VkMemoryPropertyFlags properties,
+        void Allocate(const VkDeviceSize size,
+            const VkBufferUsageFlags usageFlags,
+            const VkMemoryPropertyFlags properties,
             VkBuffer* buffer,
             VkDeviceMemory* bufferMemory);
 
         void Copy(const void* vertices,
-            VkDeviceSize size,
+            const VkDeviceSize size,
             VkDeviceMemory bufferMemory);
 
         void Copy(VkBuffer destination,
-            VkBuffer source,
-            VkDeviceSize size);
+            const VkBuffer source,
+            const VkDeviceSize size);
 
         VkDevice Device() const noexcept;
         VkPhysicalDevice PhysicalDevice() const noexcept;

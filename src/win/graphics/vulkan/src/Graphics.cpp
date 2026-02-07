@@ -76,7 +76,7 @@ namespace Luna
     }
 
     static void CheckSupportMemoryBudget(
-        VkPhysicalDevice gpu, 
+        const VkPhysicalDevice gpu, 
         const vector<VkExtensionProperties> instanceExtensions, 
         const vector<VkExtensionProperties> deviceExtensions)
     {
@@ -124,7 +124,7 @@ namespace Luna
         }
     }
 
-    void Graphics::LogHardwareInfo()
+    void Graphics::LogHardwareInfo() const
     {
         // --------------------------------------
         // Instance Layers
@@ -654,9 +654,9 @@ namespace Luna
         VkThrowIfFailed(vkQueuePresentKHR(queue, &presentInfo));
     }
     
-    static uint32 FindMemoryType(VkPhysicalDevice physicalDevice, 
-        uint32 typeFilter, 
-        VkMemoryPropertyFlags properties)
+    static uint32 FindMemoryType(const VkPhysicalDevice physicalDevice, 
+        const uint32 typeFilter, 
+        const VkMemoryPropertyFlags properties)
     {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
@@ -670,9 +670,9 @@ namespace Luna
         return 0;
     }
 
-    void Graphics::Allocate(VkDeviceSize size,
-        uint32 typeFilter,
-        VkMemoryPropertyFlags properties,
+    void Graphics::Allocate(const VkDeviceSize size,
+        const uint32 typeFilter,
+        const VkMemoryPropertyFlags properties,
         VkDeviceMemory* bufferMemory)
     {
         VkMemoryAllocateInfo allocInfo{};
@@ -683,9 +683,9 @@ namespace Luna
         VkThrowIfFailed(vkAllocateMemory(device, &allocInfo, nullptr, bufferMemory));
     }
 
-    void Graphics::Allocate(VkDeviceSize size,
-        VkBufferUsageFlags usageFlags,
-        VkMemoryPropertyFlags properties,
+    void Graphics::Allocate(const VkDeviceSize size,
+        const VkBufferUsageFlags usageFlags,
+        const VkMemoryPropertyFlags properties,
         VkBuffer* buffer,
         VkDeviceMemory* bufferMemory)
     {
@@ -705,7 +705,7 @@ namespace Luna
         VkThrowIfFailed(vkBindBufferMemory(device, *buffer, *bufferMemory, 0));
     }
 
-    void Graphics::Copy(const void* vertices, VkDeviceSize size, VkDeviceMemory bufferMemory)
+    void Graphics::Copy(const void* vertices, const VkDeviceSize size, VkDeviceMemory bufferMemory)
     {
         void* data;
         VkThrowIfFailed(vkMapMemory(device, bufferMemory, 0, size, 0, &data));
@@ -713,7 +713,7 @@ namespace Luna
         vkUnmapMemory(device, bufferMemory);
     }
 
-    void Graphics::Copy(VkBuffer destination, VkBuffer source, VkDeviceSize size)
+    void Graphics::Copy(VkBuffer destination, const VkBuffer source, const VkDeviceSize size)
     {
         ResetCommands();
 
