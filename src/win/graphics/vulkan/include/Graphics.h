@@ -38,6 +38,12 @@ namespace Luna
 
         VkRenderPass                 renderPass;
 
+        // synchronization
+        VkQueue                      queue;
+        VkSemaphore                  imageAvailableSemaphore;
+        VkSemaphore                  renderFinishedSemaphore;
+        VkFence                      fence;
+
         void LogHardwareInfo() const;
 
         ValidationLayer * validationlayer;
