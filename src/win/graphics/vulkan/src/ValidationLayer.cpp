@@ -89,6 +89,7 @@ namespace Luna
                 logger->OutputDebug(LOG_LEVEL_TRACE, format("{}\n", pCallbackData->pMessage));
                 break;
         }
+        Sleep(1500);
         return VK_FALSE;
     }
 }
