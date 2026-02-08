@@ -14,22 +14,27 @@ namespace Luna
     private:
         VkInstance                   instance;
         VkPhysicalDevice             physicalDevice;
+        VkDevice                     device;
 
         void LogHardwareInfo() const;
 
         ValidationLayer * validationlayer;
-        
+
     public:
         static Logger logger;
-        
+
         explicit Graphics() noexcept;
         ~Graphics() noexcept;
 
         void Initialize(const Window * const window);
 
         VkPhysicalDevice PhysicalDevice() const noexcept;
+        VkDevice Device() const noexcept;
     };
 
     inline VkPhysicalDevice Graphics::PhysicalDevice() const noexcept
     { return physicalDevice; }
+
+    inline VkDevice Graphics::Device() const noexcept
+    { return device; }
 };
