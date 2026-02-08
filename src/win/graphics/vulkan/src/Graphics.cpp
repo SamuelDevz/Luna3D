@@ -13,9 +13,13 @@ namespace Luna
     Logger Graphics::logger;
 
     Graphics::Graphics() noexcept
-        : instance{nullptr},
+        : backBufferCount{},
+        vSync{false},
+        instance{nullptr},
         physicalDevice{nullptr},
-        device{nullptr}
+        device{nullptr},
+        surface{nullptr},
+        swapchain{nullptr}
     {
         validationlayer = new ValidationLayer();
     }
@@ -23,6 +27,13 @@ namespace Luna
     Graphics::~Graphics() noexcept
     {
         vkDeviceWaitIdle(device);
+
+        for (uint32 i = 0; i < backBufferCount; ++i)
+            vkDestroyImageView(device, buffers[i].view, nullptr);
+        delete[] buffers;
+
+        vkDestroySwapchainKHR(device, swapchain, nullptr);
+        vkDestroySurfaceKHR(instance, surface, nullptr);
 
         SafeDelete(validationlayer);
 
@@ -328,5 +339,132 @@ namespace Luna
         deviceInfo.pEnabledFeatures = nullptr;
 
         VkThrowIfFailed(vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device));
+
+        // ---------------------------------------------------
+        // Surface
+        // ---------------------------------------------------
+
+        VkWin32SurfaceCreateInfoKHR win32SurfaceCreateInfo{};
+        win32SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        win32SurfaceCreateInfo.pNext = nullptr;
+        win32SurfaceCreateInfo.hinstance = window->AppId();
+        win32SurfaceCreateInfo.hwnd = window->Id();
+        VkThrowIfFailed(vkCreateWin32SurfaceKHR(instance, &win32SurfaceCreateInfo, nullptr, &surface));
+
+        // ---------------------------------------------------
+        // Swapchain
+        // ---------------------------------------------------
+
+        // Present Mode
+        VkPresentModeKHR swapchainPresentMode{};
+
+        if(vSync)
+        {
+            swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+        }
+        else
+        {
+            swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+
+            uint32 presentModeCount{};
+            vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+
+            vector<VkPresentModeKHR> presentModes(presentModeCount);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data());
+        
+            for (uint32 i = 0; i < presentModeCount; ++i)
+            {
+                if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
+                {
+                    swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+                    break;
+                }
+            }
+        }
+
+        // Surface Format
+        uint32 surfaceFormatCount{};
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatCount, nullptr);
+
+        vector<VkSurfaceFormatKHR> surfaceFormats(surfaceFormatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatCount, surfaceFormats.data());
+
+        VkSurfaceFormatKHR surfaceFormat = surfaceFormats[0];
+        for (uint32 i = 0; i < surfaceFormatCount; ++i)
+        {
+            if (surfaceFormats[i].format == VK_FORMAT_B8G8R8A8_UNORM &&
+                surfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            {
+                surfaceFormat = surfaceFormats[i];
+                break;
+            }
+        }
+
+        // Surface Capabilities
+        VkSurfaceCapabilitiesKHR surfaceCapabilities{};
+        VkThrowIfFailed(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities));
+
+        VkSurfaceTransformFlagBitsKHR preTransform{};
+        if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
+            preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+        else
+            preTransform = surfaceCapabilities.currentTransform;
+
+        backBufferCount = surfaceCapabilities.minImageCount + 1;
+        if (surfaceCapabilities.maxImageCount != 0 && backBufferCount > surfaceCapabilities.maxImageCount)
+			backBufferCount = surfaceCapabilities.maxImageCount;
+
+        // Swapchain
+        VkSwapchainCreateInfoKHR swapChainCreateInfo{};
+        swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        swapChainCreateInfo.pNext = nullptr;
+        swapChainCreateInfo.surface = surface;
+        swapChainCreateInfo.minImageCount = backBufferCount;
+        swapChainCreateInfo.imageFormat = surfaceFormat.format;
+        swapChainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
+        swapChainCreateInfo.imageExtent.width = window->Width();
+        swapChainCreateInfo.imageExtent.height = window->Height();
+        swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        swapChainCreateInfo.preTransform = preTransform;
+        swapChainCreateInfo.imageArrayLayers = 1;
+        swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        swapChainCreateInfo.presentMode = swapchainPresentMode;
+        swapChainCreateInfo.clipped = true;
+        swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swapChainCreateInfo.queueFamilyIndexCount = 1;
+        swapChainCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
+
+        VkThrowIfFailed(vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapchain));
+
+        // VkImage
+        vector<VkImage> swapchainImages(backBufferCount);
+        VkThrowIfFailed(vkGetSwapchainImagesKHR(device, swapchain, &backBufferCount, swapchainImages.data()));
+
+        buffers = new SwapchainBuffer[backBufferCount] {};
+        for (uint32 i = 0; i < backBufferCount; ++i)
+            buffers[i].image = swapchainImages[i];
+
+        // VkImageView
+        for (uint32 i = 0; i < backBufferCount; ++i)
+        {
+            VkImageViewCreateInfo colorImageView{};
+            colorImageView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            colorImageView.pNext = nullptr;
+            colorImageView.flags = 0;
+            colorImageView.image = buffers[i].image;
+            colorImageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            colorImageView.format = surfaceFormat.format;
+            colorImageView.components.r = VK_COMPONENT_SWIZZLE_R;
+            colorImageView.components.g = VK_COMPONENT_SWIZZLE_G;
+            colorImageView.components.b = VK_COMPONENT_SWIZZLE_B;
+            colorImageView.components.a = VK_COMPONENT_SWIZZLE_A;
+            colorImageView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            colorImageView.subresourceRange.baseMipLevel = 0;
+            colorImageView.subresourceRange.levelCount = 1;
+            colorImageView.subresourceRange.baseArrayLayer = 0;
+            colorImageView.subresourceRange.layerCount = 1;
+
+            VkThrowIfFailed(vkCreateImageView(device, &colorImageView, nullptr, &buffers[i].view));
+        }
     }
 }
