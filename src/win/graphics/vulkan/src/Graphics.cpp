@@ -38,7 +38,10 @@ namespace Luna
         vkDestroyCommandPool(device, commandPool, nullptr);
 
         for (uint32 i = 0; i < backBufferCount; ++i)
+        {
+            vkDestroyFramebuffer(device, buffers[i].framebuffer, nullptr);
             vkDestroyImageView(device, buffers[i].view, nullptr);
+        }
         delete[] buffers;
 
         vkDestroySwapchainKHR(device, swapchain, nullptr);
@@ -527,5 +530,23 @@ namespace Luna
         renderPassCreateInfo.pSubpasses = &subPassDescription;
 
         VkThrowIfFailed(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass));
+
+        // ---------------------------------------------------
+        // Frame Buffers
+        // ---------------------------------------------------
+
+        for (uint32 i = 0; i < backBufferCount; ++i)
+        {
+            VkFramebufferCreateInfo framebufferCreateInfo{};
+            framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebufferCreateInfo.renderPass = renderPass;
+            framebufferCreateInfo.attachmentCount = 1;
+            framebufferCreateInfo.pAttachments = &buffers[i].view;
+            framebufferCreateInfo.width = window->Width();
+            framebufferCreateInfo.height = window->Height();
+            framebufferCreateInfo.layers = 1;
+
+            VkThrowIfFailed(vkCreateFramebuffer(device, &framebufferCreateInfo, nullptr, &buffers[i].framebuffer));
+        }
     }
 }
