@@ -10,10 +10,13 @@ namespace Luna
     Graphics::Graphics() noexcept
         : instance{nullptr}
     {
+        validationlayer = new ValidationLayer();
     }
 
     Graphics::~Graphics() noexcept
     {
+        SafeDelete(validationlayer);
+
         vkDestroyInstance(instance, nullptr);
     }
 
@@ -62,5 +65,9 @@ namespace Luna
     #endif
 
         VkThrowIfFailed(vkCreateInstance(&instanceInfo, nullptr, &instance));
+
+    #ifdef _DEBUG
+        validationlayer->Initialize(instance, &logger);
+    #endif
     }
 }
