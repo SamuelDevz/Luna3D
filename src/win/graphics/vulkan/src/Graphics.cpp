@@ -19,7 +19,9 @@ namespace Luna
         physicalDevice{nullptr},
         device{nullptr},
         surface{nullptr},
-        swapchain{nullptr}
+        swapchain{nullptr},
+        commandBuffer{nullptr}, 
+        commandPool{nullptr}
     {
         validationlayer = new ValidationLayer();
     }
@@ -27,6 +29,10 @@ namespace Luna
     Graphics::~Graphics() noexcept
     {
         vkDeviceWaitIdle(device);
+
+        VkCommandBuffer commandBuffers[] { commandBuffer, copyCommandBuffer };
+        vkFreeCommandBuffers(device, commandPool, 2, commandBuffers);
+        vkDestroyCommandPool(device, commandPool, nullptr);
 
         for (uint32 i = 0; i < backBufferCount; ++i)
             vkDestroyImageView(device, buffers[i].view, nullptr);
@@ -466,5 +472,25 @@ namespace Luna
 
             VkThrowIfFailed(vkCreateImageView(device, &colorImageView, nullptr, &buffers[i].view));
         }
+
+        // ---------------------------------------------------
+        // Command Buffers and Command Pool
+        // ---------------------------------------------------
+
+        VkCommandPoolCreateInfo cmdPoolCreateInfo{};
+        cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        cmdPoolCreateInfo.queueFamilyIndex = queueFamilyIndex;
+
+        VkThrowIfFailed(vkCreateCommandPool(device, &cmdPoolCreateInfo, nullptr, &commandPool));
+        
+        VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
+        commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        commandBufferAllocateInfo.commandPool = commandPool;
+        commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        commandBufferAllocateInfo.commandBufferCount = 1;
+
+        VkThrowIfFailed(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &commandBuffer));
+        VkThrowIfFailed(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &copyCommandBuffer));
     }
 }

@@ -32,6 +32,10 @@ namespace Luna
         VkSwapchainKHR               swapchain;
         SwapchainBuffer            * buffers;
 
+        VkCommandBuffer              commandBuffer;
+        VkCommandBuffer              copyCommandBuffer;
+        VkCommandPool                commandPool;
+
         void LogHardwareInfo() const;
 
         ValidationLayer * validationlayer;
@@ -47,6 +51,7 @@ namespace Luna
 
         VkPhysicalDevice PhysicalDevice() const noexcept;
         VkDevice Device() const noexcept;
+        VkCommandBuffer CommandBuffer() const noexcept;
     };
 
     inline void Graphics::VSync(const bool state) noexcept
@@ -57,4 +62,7 @@ namespace Luna
 
     inline VkDevice Graphics::Device() const noexcept
     { return device; }
+
+    inline VkCommandBuffer Graphics::CommandBuffer() const noexcept
+    { return commandBuffer; }
 };
