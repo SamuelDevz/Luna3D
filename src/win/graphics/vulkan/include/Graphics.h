@@ -22,6 +22,7 @@ namespace Luna
         // config
         uint32                       backBufferCount;
         bool                         vSync;
+        VkClearColorValue            bgColor;
 
         // pipeline
         VkInstance                   instance;
@@ -51,6 +52,9 @@ namespace Luna
     public:
         static Logger logger;
         
+        VkViewport                   viewport;
+        VkRect2D                     scissorRect;
+
         explicit Graphics() noexcept;
         ~Graphics() noexcept;
 
