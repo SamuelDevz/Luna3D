@@ -13,6 +13,7 @@ namespace Luna
     {
     private:
         VkInstance                   instance;
+        VkPhysicalDevice             physicalDevice;
 
         ValidationLayer * validationlayer;
         
@@ -23,5 +24,10 @@ namespace Luna
         ~Graphics() noexcept;
 
         void Initialize(const Window * const window);
+
+        VkPhysicalDevice PhysicalDevice() const noexcept;
     };
+
+    inline VkPhysicalDevice Graphics::PhysicalDevice() const noexcept
+    { return physicalDevice; }
 };
