@@ -13,7 +13,8 @@ namespace Luna
     Logger Graphics::logger;
 
     Graphics::Graphics() noexcept
-        : backBufferCount{},
+        : bgColor{},
+        backBufferCount{},
         vSync{false},
         instance{nullptr},
         physicalDevice{nullptr},
