@@ -36,6 +36,8 @@ namespace Luna
         VkCommandBuffer              copyCommandBuffer;
         VkCommandPool                commandPool;
 
+        VkRenderPass                 renderPass;
+
         void LogHardwareInfo() const;
 
         ValidationLayer * validationlayer;
@@ -52,6 +54,7 @@ namespace Luna
         VkPhysicalDevice PhysicalDevice() const noexcept;
         VkDevice Device() const noexcept;
         VkCommandBuffer CommandBuffer() const noexcept;
+        VkRenderPass RenderPass() const noexcept;
     };
 
     inline void Graphics::VSync(const bool state) noexcept
@@ -65,4 +68,7 @@ namespace Luna
 
     inline VkCommandBuffer Graphics::CommandBuffer() const noexcept
     { return commandBuffer; }
+
+    inline VkRenderPass Graphics::RenderPass() const noexcept
+    { return renderPass; }
 };

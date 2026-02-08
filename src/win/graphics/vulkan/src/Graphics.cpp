@@ -21,7 +21,8 @@ namespace Luna
         surface{nullptr},
         swapchain{nullptr},
         commandBuffer{nullptr}, 
-        commandPool{nullptr}
+        commandPool{nullptr},
+        renderPass{nullptr}
     {
         validationlayer = new ValidationLayer();
     }
@@ -29,6 +30,8 @@ namespace Luna
     Graphics::~Graphics() noexcept
     {
         vkDeviceWaitIdle(device);
+
+        vkDestroyRenderPass(device, renderPass, nullptr);
 
         VkCommandBuffer commandBuffers[] { commandBuffer, copyCommandBuffer };
         vkFreeCommandBuffers(device, commandPool, 2, commandBuffers);
@@ -492,5 +495,37 @@ namespace Luna
 
         VkThrowIfFailed(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &commandBuffer));
         VkThrowIfFailed(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &copyCommandBuffer));
+
+        // ---------------------------------------------------
+        // Renderpass
+        // ---------------------------------------------------
+
+        VkAttachmentDescription attachmentDescription{};
+        attachmentDescription.format = surfaceFormat.format;
+        attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+        attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        VkAttachmentReference colorAttachmentReference{};
+        colorAttachmentReference.attachment = 0;
+        colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subPassDescription{};
+        subPassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subPassDescription.colorAttachmentCount = 1;
+        subPassDescription.pColorAttachments = &colorAttachmentReference;
+
+        VkRenderPassCreateInfo renderPassCreateInfo{};
+        renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        renderPassCreateInfo.attachmentCount = 1;
+        renderPassCreateInfo.pAttachments = &attachmentDescription;
+        renderPassCreateInfo.subpassCount = 1;
+        renderPassCreateInfo.pSubpasses = &subPassDescription;
+
+        VkThrowIfFailed(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass));
     }
 }
