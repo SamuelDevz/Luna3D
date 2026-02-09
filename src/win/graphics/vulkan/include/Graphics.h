@@ -61,6 +61,25 @@ namespace Luna
         void VSync(const bool state) noexcept;
         void Initialize(const Window * const window);
 
+        void Allocate(const VkDeviceSize size,
+            const uint32 typeFilter,
+            VkMemoryPropertyFlags properties,
+            VkDeviceMemory* bufferMemory);
+
+        void Allocate(const VkDeviceSize size,
+            const VkBufferUsageFlags usageFlags,
+            const VkMemoryPropertyFlags properties,
+            VkBuffer* buffer,
+            VkDeviceMemory* bufferMemory);
+
+        void Copy(const void* vertices, 
+            const VkDeviceSize size, 
+            VkDeviceMemory bufferMemory);
+
+        void Copy(VkBuffer destination, 
+            const VkBuffer source, 
+            const VkDeviceSize size);
+
         VkPhysicalDevice PhysicalDevice() const noexcept;
         VkDevice Device() const noexcept;
         VkCommandBuffer CommandBuffer() const noexcept;

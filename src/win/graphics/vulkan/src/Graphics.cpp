@@ -612,4 +612,86 @@ namespace Luna
         bgColor.float32[2] = GetBValue(color) / 255.0f;
         bgColor.float32[3] = 1.0f;
     }
+
+    static uint32 FindMemoryType(const VkPhysicalDevice physicalDevice, 
+        const uint32 typeFilter, 
+        const VkMemoryPropertyFlags properties)
+    {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+        for (uint32 i = 0; i < memProperties.memoryTypeCount; ++i)
+        {
+            if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+                return i;
+        }
+
+        return 0;
+    }
+
+    void Graphics::Allocate(const VkDeviceSize size,
+        const uint32 typeFilter,
+        const VkMemoryPropertyFlags properties,
+        VkDeviceMemory* bufferMemory)
+    {
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = size;
+        allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, typeFilter, properties);
+
+        VkThrowIfFailed(vkAllocateMemory(device, &allocInfo, nullptr, bufferMemory));
+    }
+
+    void Graphics::Allocate(const VkDeviceSize size,
+        const VkBufferUsageFlags usageFlags,
+        const VkMemoryPropertyFlags properties,
+        VkBuffer* buffer,
+        VkDeviceMemory* bufferMemory)
+    {
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = size;
+        bufferInfo.usage = usageFlags;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        VkThrowIfFailed(vkCreateBuffer(device, &bufferInfo, nullptr, buffer));
+
+        VkMemoryRequirements memRequirements{};
+
+        vkGetBufferMemoryRequirements(device, *buffer, &memRequirements);
+        Allocate(memRequirements.size, memRequirements.memoryTypeBits, properties, bufferMemory);
+
+        VkThrowIfFailed(vkBindBufferMemory(device, *buffer, *bufferMemory, 0));
+    }
+
+    void Graphics::Copy(const void* vertices, const VkDeviceSize size, VkDeviceMemory bufferMemory)
+    {
+        void* data;
+        VkThrowIfFailed(vkMapMemory(device, bufferMemory, 0, size, 0, &data));
+        CopyMemory(data, vertices, size);
+        vkUnmapMemory(device, bufferMemory);
+    }
+
+    void Graphics::Copy(VkBuffer destination, const VkBuffer source, const VkDeviceSize size)
+    {
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        VkThrowIfFailed(vkBeginCommandBuffer(copyCommandBuffer, &beginInfo));
+
+        VkBufferCopy copyRegion{};
+        copyRegion.size = size;
+        vkCmdCopyBuffer(copyCommandBuffer, source, destination, 1, &copyRegion);
+
+        VkThrowIfFailed(vkEndCommandBuffer(copyCommandBuffer));
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &copyCommandBuffer;
+
+        VkThrowIfFailed(vkQueueSubmit(queue, 1, &submitInfo, nullptr));
+        VkThrowIfFailed(vkQueueWaitIdle(queue));
+    }
 }
