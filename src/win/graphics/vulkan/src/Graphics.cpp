@@ -613,6 +613,48 @@ namespace Luna
         bgColor.float32[3] = 1.0f;
     }
 
+    void Graphics::Present()
+    {
+        vkWaitForFences(device, 1, &fence, true, UINT64_MAX);
+        vkResetFences(device, 1, &fence);
+
+        VkThrowIfFailed(vkAcquireNextImageKHR(
+            device, 
+            swapchain, 
+            UINT64_MAX, 
+            imageAvailableSemaphore, 
+            nullptr, 
+            &backBufferIndex
+        ));
+
+        VkThrowIfFailed(vkResetCommandBuffer(commandBuffer, 0));
+
+        const VkPipelineStageFlags waitStages[]
+        { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &renderFinishedSemaphore;
+
+        VkThrowIfFailed(vkQueueSubmit(queue, 1, &submitInfo, fence));
+
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = &renderFinishedSemaphore;
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = &swapchain;
+        presentInfo.pImageIndices = &backBufferIndex;
+
+        VkThrowIfFailed(vkQueuePresentKHR(queue, &presentInfo));
+    }
+
     static uint32 FindMemoryType(const VkPhysicalDevice physicalDevice, 
         const uint32 typeFilter, 
         const VkMemoryPropertyFlags properties)
