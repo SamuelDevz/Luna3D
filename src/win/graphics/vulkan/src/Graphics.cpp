@@ -646,15 +646,13 @@ namespace Luna
         vkResetFences(device, 1, &fence);
 
         VkThrowIfFailed(vkAcquireNextImageKHR(
-            device, 
-            swapchain, 
-            UINT64_MAX, 
-            imageAvailableSemaphore, 
-            nullptr, 
+            device,
+            swapchain,
+            UINT64_MAX,
+            imageAvailableSemaphore,
+            nullptr,
             &backBufferIndex
         ));
-
-        VkThrowIfFailed(vkResetCommandBuffer(commandBuffer, 0));
 
         const VkPipelineStageFlags waitStages[]
         { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
