@@ -5,6 +5,7 @@ namespace Luna
     Mesh::Mesh(const string_view name) noexcept
         : id{name},
         vertexCount{},
+        vertexBufferSize{},
         vertexUploadBuffer{nullptr, nullptr},
         vertexBuffer{nullptr},
         vertexBufferMemory{nullptr},

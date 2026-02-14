@@ -16,6 +16,7 @@ namespace Luna
         string id;
 
         int32 vertexCount;
+        uint32 vertexBufferSize;
         VkBuffer vertexBuffer;
         VkDeviceMemory vertexBufferMemory;
 
