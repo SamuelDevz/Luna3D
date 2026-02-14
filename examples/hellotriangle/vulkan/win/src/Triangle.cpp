@@ -1,5 +1,6 @@
 #include "Triangle.h"
 #include "Colors.h"
+#include "Utils.h"
 using namespace glm;
 
 namespace Luna
@@ -7,6 +8,7 @@ namespace Luna
     void Triangle::Init()
     {
         renderer = new Renderer();
+        geometry = new Mesh("Triangle");
         BuildGeometry();
     }
 
@@ -18,13 +20,17 @@ namespace Luna
 
     void Triangle::Display()
     {
-        graphics->BeginCommandRecording();
+        graphics->Clear();
 
-        renderer->BindDrawResources();
+        vkCmdBindPipeline(graphics->CommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer->Pipeline());
+        
+        VkDeviceSize offset{};
+        vkCmdBindVertexBuffers(graphics->CommandBuffer(), 0, 1, &geometry->vertexBuffer, &offset);
 
-        vkCmdDraw(graphics->CommandBuffer(), 3, 1, 0, 0);
+        vkCmdDraw(graphics->CommandBuffer(), geometry->vertexCount, 1, 0, 0);
 
-        graphics->EndCommandRecording();
+        vkCmdEndRenderPass(graphics->CommandBuffer());
+        vkEndCommandBuffer(graphics->CommandBuffer());
 
         graphics->Present();
     }
@@ -32,17 +38,47 @@ namespace Luna
     void Triangle::Finalize()
     {
         SafeDelete(renderer);
+        SafeDelete(geometry);
     }
 
     void Triangle::BuildGeometry()
     {
-        Vertex vertices[]
+        constexpr Vertex vertices[]
         {
             { Position(0.0f, -0.5f, 0.0f), Color(Colors::Red) },
             { Position(-0.5f, 0.5f, 0.0f), Color(Colors::Orange) },
             { Position(0.5f, 0.5f, 0.0f), Color(Colors::Yellow) }
         };
 
-        renderer->Initialize(graphics, vertices, 3);
+        geometry->vertexCount = Countof(vertices);
+        geometry->vertexBufferSize = sizeof(Vertex) * geometry->vertexCount;
+        geometry->device = graphics->Device();
+		
+        graphics->Allocate(
+            geometry->vertexBufferSize,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            &geometry->vertexUploadBuffer.buffer,
+            &geometry->vertexUploadBuffer.memory
+        );
+
+        graphics->Copy(vertices, geometry->vertexBufferSize, geometry->vertexUploadBuffer.memory);
+
+        graphics->Allocate(
+            geometry->vertexBufferSize,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            &geometry->vertexBuffer,
+            &geometry->vertexBufferMemory
+        );
+
+        graphics->Copy(geometry->vertexBuffer, geometry->vertexUploadBuffer.buffer, geometry->vertexBufferSize);
+
+        vkDestroyBuffer(graphics->Device(), geometry->vertexUploadBuffer.buffer, nullptr);
+        vkFreeMemory(graphics->Device(), geometry->vertexUploadBuffer.memory, nullptr);
+        geometry->vertexUploadBuffer.buffer = nullptr;
+        geometry->vertexUploadBuffer.memory = nullptr;
+
+        renderer->Initialize(graphics, geometry);
     }
 }

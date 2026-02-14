@@ -9,6 +9,7 @@ namespace Luna
     {
     private:
         Renderer* renderer;
+        Mesh* geometry;
 
     public:
         void Init() override;

@@ -5,17 +5,29 @@ namespace Luna
     Mesh::Mesh(const string_view name) noexcept
         : id{name},
         vertexCount{},
+        vertexBufferSize{},
+        vertexUploadBuffer{nullptr, nullptr},
         vertexBuffer{nullptr},
         vertexBufferMemory{nullptr},
-        vertexBufferUpload{nullptr},
-        vertexBufferUploadMemory{nullptr},
         device{nullptr}
     {
     }
     
     Mesh::~Mesh() noexcept
     {
-        vkDestroyBuffer(device, vertexBuffer, nullptr);
-	    vkFreeMemory(device, vertexBufferMemory, nullptr);
+        if (device)
+        {
+            if (vertexBuffer)
+                vkDestroyBuffer(device, vertexBuffer, nullptr);
+            
+            if (vertexBufferMemory)
+                vkFreeMemory(device, vertexBufferMemory, nullptr);
+            
+            if (vertexUploadBuffer.buffer)
+                vkDestroyBuffer(device, vertexUploadBuffer.buffer, nullptr);
+            
+            if (vertexUploadBuffer.memory)
+                vkFreeMemory(device, vertexUploadBuffer.memory, nullptr);
+        }
     }
 }

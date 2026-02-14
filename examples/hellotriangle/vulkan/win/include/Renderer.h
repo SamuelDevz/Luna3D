@@ -24,13 +24,14 @@ namespace Luna
         VkPipeline                pipeline;
         VkPipelineLayout          pipelineLayout;
 
-        void BuildVertexBuffer(const Vertex* vertices, const uint32 count);
-        
     public:
         explicit Renderer() noexcept;
         ~Renderer();
 
-        void Initialize(Graphics * graphics, const Vertex* vertices, const uint32 verticesCount);
-        void BindDrawResources() noexcept;
+        void Initialize(Graphics * graphics, Mesh * geometry);
+        VkPipeline Pipeline() const noexcept;
     };
+
+    inline VkPipeline Renderer::Pipeline() const noexcept
+    { return pipeline; }
 }

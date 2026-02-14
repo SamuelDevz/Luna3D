@@ -33,7 +33,7 @@ namespace Luna
     
     ValidationLayer::~ValidationLayer() noexcept
     {
-        logger->OutputDebug(LogLevel::LOG_LEVEL_DEBUG, "Destroying Vulkan debugger");
+        logger->OutputDebug(LOG_LEVEL_DEBUG, "Destroying Vulkan debugger\n");
         DestroyDebugUtilsMessengerEXT(instance, debugUtils, nullptr);
     }
 
@@ -42,7 +42,7 @@ namespace Luna
         this->instance = instance;
         this->logger = logger;
         
-        logger->OutputDebug(LogLevel::LOG_LEVEL_DEBUG, "Creating Vulkan debugger");
+        logger->OutputDebug(LOG_LEVEL_DEBUG, "Creating Vulkan debugger\n");
 
         VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo{};
         debugUtilsCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -62,7 +62,7 @@ namespace Luna
             nullptr, 
             &debugUtils));
 
-        logger->OutputDebug(LogLevel::LOG_LEVEL_DEBUG, "Vulkan debugger created");
+        logger->OutputDebug(LOG_LEVEL_DEBUG, "Vulkan debugger created\n");
     }
     
     VKAPI_ATTR VkBool32 VKAPI_CALL ValidationLayer::DebugCallbackUtils(
@@ -77,18 +77,19 @@ namespace Luna
         switch (messageSeverity)
         {
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-                logger->OutputDebug(LogLevel::LOG_LEVEL_ERROR, format("{}", pCallbackData->pMessage));
+                logger->OutputDebug(LOG_LEVEL_ERROR, format("{}\n", pCallbackData->pMessage));
                 break;
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-                logger->OutputDebug(LogLevel::LOG_LEVEL_WARN, format("{}", pCallbackData->pMessage));
+                logger->OutputDebug(LOG_LEVEL_WARN, format("{}\n", pCallbackData->pMessage));
                 break;
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-                logger->OutputDebug(LogLevel::LOG_LEVEL_INFO, format("{}", pCallbackData->pMessage));
+                logger->OutputDebug(LOG_LEVEL_INFO, format("{}\n", pCallbackData->pMessage));
                 break;
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-                logger->OutputDebug(LogLevel::LOG_LEVEL_TRACE, format("{}", pCallbackData->pMessage));
+                logger->OutputDebug(LOG_LEVEL_TRACE, format("{}\n", pCallbackData->pMessage));
                 break;
         }
+        Sleep(1500);
         return VK_FALSE;
     }
 }

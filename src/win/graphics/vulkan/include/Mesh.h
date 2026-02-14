@@ -5,20 +5,26 @@
 
 namespace Luna
 {
+    struct StagingBuffer
+    {
+        VkBuffer buffer;
+        VkDeviceMemory memory;
+    };
+    
     struct Mesh
     {
         string id;
 
         int32 vertexCount;
+        uint32 vertexBufferSize;
         VkBuffer vertexBuffer;
         VkDeviceMemory vertexBufferMemory;
 
-        VkBuffer vertexBufferUpload;
-        VkDeviceMemory vertexBufferUploadMemory;
+        StagingBuffer vertexUploadBuffer;
 
 	    VkDevice device;
 
         Mesh(const string_view name) noexcept;
         ~Mesh() noexcept;
-    };      
+    };
 }

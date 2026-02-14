@@ -35,37 +35,34 @@ namespace Luna
         uint32                       backBufferIndex;
 
         VkCommandBuffer              commandBuffer;
+        VkCommandBuffer              copyCommandBuffer;
         VkCommandPool                commandPool;
 
         VkRenderPass                 renderPass;
-        VkQueue                      queue;
 
         // synchronization
+        VkQueue                      queue;
         VkSemaphore                  imageAvailableSemaphore;
         VkSemaphore                  renderFinishedSemaphore;
         VkFence                      fence;
 
-        bool WaitCommandQueue() noexcept;
         void LogHardwareInfo() const;
 
         ValidationLayer * validationlayer;
-
+        
     public:
         static Logger logger;
         
-        explicit Graphics() noexcept;
-        ~Graphics() noexcept;
-
         VkViewport                   viewport;
         VkRect2D                     scissorRect;
 
-        void VSync(const bool state) noexcept;
-        void Initialize(const Window* const window);
-        void Present();
+        explicit Graphics() noexcept;
+        ~Graphics() noexcept;
 
-        void ResetCommands() const;
-        void BeginCommandRecording() const;
-        void EndCommandRecording() const;
+        void VSync(const bool state) noexcept;
+        void Initialize(const Window * const window);
+        void Clear();
+        void Present();
 
         void Allocate(const VkDeviceSize size,
             const uint32 typeFilter,
@@ -78,32 +75,32 @@ namespace Luna
             VkBuffer* buffer,
             VkDeviceMemory* bufferMemory);
 
-        void Copy(const void* vertices,
-            const VkDeviceSize size,
+        void Copy(const void* vertices, 
+            const VkDeviceSize size, 
             VkDeviceMemory bufferMemory);
 
-        void Copy(VkBuffer destination,
-            const VkBuffer source,
+        void Copy(VkBuffer destination, 
+            const VkBuffer source, 
             const VkDeviceSize size);
 
-        VkDevice Device() const noexcept;
         VkPhysicalDevice PhysicalDevice() const noexcept;
-        VkRenderPass RenderPass() const noexcept;
+        VkDevice Device() const noexcept;
         VkCommandBuffer CommandBuffer() const noexcept;
+        VkRenderPass RenderPass() const noexcept;
     };
 
     inline void Graphics::VSync(const bool state) noexcept
     { vSync = state; }
 
-    inline VkDevice Graphics::Device() const noexcept
-    { return device; }
-
     inline VkPhysicalDevice Graphics::PhysicalDevice() const noexcept
     { return physicalDevice; }
 
-    inline VkRenderPass Graphics::RenderPass() const noexcept
-    { return renderPass; }
+    inline VkDevice Graphics::Device() const noexcept
+    { return device; }
 
     inline VkCommandBuffer Graphics::CommandBuffer() const noexcept
     { return commandBuffer; }
-}
+
+    inline VkRenderPass Graphics::RenderPass() const noexcept
+    { return renderPass; }
+};

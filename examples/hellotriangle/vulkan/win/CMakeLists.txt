@@ -8,13 +8,13 @@ set(RESOURCE_FILES resources/Resources.h
 set(SHADER_FILES resources/Shaders/Vertex.vert
     resources/Shaders/Fragment.frag)
 
-# Create directory for HLSL shaders
+# Create output directory for compiled SPIR-V shaders
 add_custom_target(directory)
 add_custom_command(TARGET directory POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:triangle>/Shaders
     COMMAND_EXPAND_LISTS)
 
-# Build HLSL shaders
+# Compile GLSL shader files to SPIR-V
 add_custom_target(shaders)
 foreach(FILE ${SHADER_FILES})
     get_filename_component(FILE_WE ${FILE} NAME_WE)

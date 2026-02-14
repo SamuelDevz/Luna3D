@@ -13,16 +13,16 @@ namespace Luna
     Logger Graphics::logger;
 
     Graphics::Graphics() noexcept
-        : backBufferCount{2},
+        : bgColor{},
+        backBufferCount{},
         vSync{false},
-        bgColor{},
         instance{nullptr},
         physicalDevice{nullptr},
         device{nullptr},
         surface{nullptr},
         swapchain{nullptr},
         backBufferIndex{},
-        commandBuffer{nullptr},
+        commandBuffer{nullptr}, 
         commandPool{nullptr},
         renderPass{nullptr},
         queue{nullptr},
@@ -32,7 +32,6 @@ namespace Luna
         viewport{},
         scissorRect{}
     {
-        buffers = new SwapchainBuffer[backBufferCount] {};
         validationlayer = new ValidationLayer();
     }
 
@@ -44,30 +43,31 @@ namespace Luna
         vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
         vkDestroyFence(device, fence, nullptr);
 
+        vkDestroyRenderPass(device, renderPass, nullptr);
+
+        VkCommandBuffer commandBuffers[] { commandBuffer, copyCommandBuffer };
+        vkFreeCommandBuffers(device, commandPool, 2, commandBuffers);
+        vkDestroyCommandPool(device, commandPool, nullptr);
+
         for (uint32 i = 0; i < backBufferCount; ++i)
         {
             vkDestroyFramebuffer(device, buffers[i].framebuffer, nullptr);
             vkDestroyImageView(device, buffers[i].view, nullptr);
         }
-
         delete[] buffers;
-
-        VkCommandBuffer commandBuffers[]{ commandBuffer };
-        vkFreeCommandBuffers(device, commandPool, 1, commandBuffers);
-        vkDestroyCommandPool(device, commandPool, nullptr);
-
-        vkDestroyRenderPass(device, renderPass, nullptr);
 
         vkDestroySwapchainKHR(device, swapchain, nullptr);
         vkDestroySurfaceKHR(instance, surface, nullptr);
 
         SafeDelete(validationlayer);
-        
+
         vkDestroyDevice(device, nullptr);
         vkDestroyInstance(instance, nullptr);
     }
 
-    static bool CheckExtensionSupported(const vector<VkExtensionProperties> extensions, const string_view requestExtension)
+    static bool CheckExtensionSupported(
+        const vector<VkExtensionProperties> extensions, 
+        const string_view requestExtension)
     {
         return std::ranges::find_if(extensions,
             [requestExtension](auto& device_extension) {
@@ -76,7 +76,7 @@ namespace Luna
     }
 
     static void CheckSupportMemoryBudget(
-        const VkPhysicalDevice gpu, 
+        VkPhysicalDevice gpu, 
         const vector<VkExtensionProperties> instanceExtensions, 
         const vector<VkExtensionProperties> deviceExtensions)
     {
@@ -107,18 +107,18 @@ namespace Luna
 
             constexpr const uint32 BytesinMegaByte = 1048576U; // 1'048'576
 
-            Graphics::logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
-                format("---> Video memory (size total): {}MB", 
+            Graphics::logger.OutputDebug(LOG_LEVEL_INFO, 
+                format("---> Video memory (size total): {}MB\n", 
                     memoryTotalsize / BytesinMegaByte)
             );
 
-            Graphics::logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
-                format("---> Video memory (budget total): {}MB", 
+            Graphics::logger.OutputDebug(LOG_LEVEL_INFO, 
+                format("---> Video memory (budget total): {}MB\n", 
                     memoryTotalBudget / BytesinMegaByte)
             );
                 
-            Graphics::logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
-                format("---> Video memory (usage total): {}MB", 
+            Graphics::logger.OutputDebug(LOG_LEVEL_INFO, 
+                format("---> Video memory (usage total): {}MB\n", 
                     memoryTotalUsage / BytesinMegaByte)
             );
         }
@@ -131,28 +131,28 @@ namespace Luna
         // --------------------------------------
         
         uint32 layerCount{};
-        VkThrowIfFailed(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
+        VkThrowIfFailed(vkEnumerateInstanceLayerProperties(&layerCount, nullptr))
 
         vector<VkLayerProperties> instanceLayers(layerCount);
-        VkThrowIfFailed(vkEnumerateInstanceLayerProperties(&layerCount, instanceLayers.data()));
+        VkThrowIfFailed(vkEnumerateInstanceLayerProperties(&layerCount, instanceLayers.data()))
         
-        logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("---> {} Instance Layer:", layerCount));
+        logger.OutputDebug(LOG_LEVEL_INFO, format("---> {} Instance Layer:\n", layerCount));
         for (const auto& layer : instanceLayers)
-            logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("\t{}", layer.layerName));
+            logger.OutputDebug(LOG_LEVEL_INFO, format("\t{}\n", layer.layerName));
 
         // --------------------------------------
         // Instance Extensions
         // --------------------------------------
 
         uint32 extensionCount{};
-        VkThrowIfFailed(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
+        VkThrowIfFailed(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr))
 
         vector<VkExtensionProperties> instanceExtensions(extensionCount);
-        VkThrowIfFailed(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, instanceExtensions.data()));
+        VkThrowIfFailed(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, instanceExtensions.data()))
         
-        logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("---> {} Instance Extensions:", extensionCount));
+        logger.OutputDebug(LOG_LEVEL_INFO, format("---> {} Instance Extensions:\n", extensionCount));
         for (const auto& extension : instanceExtensions)
-            logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("\t{}", extension.extensionName));
+            logger.OutputDebug(LOG_LEVEL_INFO, format("\t{}\n", extension.extensionName));
 
         // --------------------------------------
         // Device Extensions
@@ -162,24 +162,24 @@ namespace Luna
         VkThrowIfFailed(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, nullptr));
         
         vector<VkExtensionProperties> deviceExtensions(deviceExtensionCount);
-        VkThrowIfFailed(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, deviceExtensions.data()));
+        VkThrowIfFailed(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, deviceExtensions.data()))
 
 		// --------------------------------------
 		// Video adapter (GPUs)
 		// --------------------------------------
 		
         uint32 gpuCount{};
-        VkThrowIfFailed(vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr));
+        vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr);
 
         vector<VkPhysicalDevice> gpus(gpuCount);
-        VkThrowIfFailed(vkEnumeratePhysicalDevices(instance, &gpuCount, gpus.data()));
+        vkEnumeratePhysicalDevices(instance, &gpuCount, gpus.data());
 
         for (size_t i = 0; i < gpuCount; ++i)
         {
             VkPhysicalDeviceProperties deviceProperties;
             vkGetPhysicalDeviceProperties(gpus[i], &deviceProperties);
-            logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
-                format("---> Video adapter (GPU) {}: {}", 
+            logger.OutputDebug(LOG_LEVEL_INFO, 
+                format("---> Video adapter (GPU) {}: {}\n", 
                     i + 1, deviceProperties.deviceName)
             );
 
@@ -188,27 +188,27 @@ namespace Luna
             switch (deviceProperties.deviceType)
             {
                 case VK_PHYSICAL_DEVICE_TYPE_OTHER:
-                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> Other");
+                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Other\n");
                     break;
                 case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> Integrated GPU");
+                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Integrated GPU\n");
                     break;
                 case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> Discrete GPU");
+                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Discrete GPU\n");
                     break;
                 case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> Virtual GPU");
+                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Virtual GPU\n");
                     break;
                 case VK_PHYSICAL_DEVICE_TYPE_CPU:
-                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> CPU");
+                    logger.OutputDebug(LOG_LEVEL_INFO, "---> CPU\n");
                     break;
                 default:
-                    logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, "---> Unknown device type");
+                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Unknown device type\n");
                     break;
             }
             
-            logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
-                format("---> Feature Level: {}.{}.{}", 
+            logger.OutputDebug(LOG_LEVEL_INFO, 
+                format("---> Feature Level: {}.{}.{}\n", 
                     VK_API_VERSION_MAJOR(deviceProperties.apiVersion),
                     VK_API_VERSION_MINOR(deviceProperties.apiVersion),
                     VK_API_VERSION_PATCH(deviceProperties.apiVersion))
@@ -225,7 +225,7 @@ namespace Luna
         while (EnumDisplayDevices(nullptr, deviceNum, &dd, 0)) 
         {
             if (dd.StateFlags & DISPLAY_DEVICE_ACTIVE) 
-                logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, format("---> Monitor: {}", dd.DeviceName));
+                logger.OutputDebug(LOG_LEVEL_INFO, format("---> Monitor: {}\n", dd.DeviceName));
             deviceNum++;
         }
 
@@ -242,8 +242,8 @@ namespace Luna
 		EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &devMode);
 		uint32 refreshRate = devMode.dmDisplayFrequency;
 
-		logger.OutputDebug(LogLevel::LOG_LEVEL_INFO, 
-            format("---> Resolution: {}x{} {}Hz", 
+		logger.OutputDebug(LOG_LEVEL_INFO, 
+            format("---> Resolution: {}x{} {}Hz\n", 
                 screenWidth, screenHeight, refreshRate)
         );
     }
@@ -293,7 +293,7 @@ namespace Luna
     #endif
 
         VkThrowIfFailed(vkCreateInstance(&instanceInfo, nullptr, &instance));
-    
+
     #ifdef _DEBUG
         validationlayer->Initialize(instance, &logger);
     #endif
@@ -334,7 +334,7 @@ namespace Luna
             }
         }
 
-        float queuePriorities{};
+        float queuePriorities { 1.0f };
         VkDeviceQueueCreateInfo queueInfo{};
         queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueInfo.pNext = nullptr;
@@ -363,7 +363,6 @@ namespace Luna
         deviceInfo.pEnabledFeatures = nullptr;
 
         VkThrowIfFailed(vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device));
-
         vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue);
 
         // ---------------------------------------------------
@@ -381,6 +380,7 @@ namespace Luna
         // Swapchain
         // ---------------------------------------------------
 
+        // Present Mode
         VkPresentModeKHR swapchainPresentMode{};
 
         if(vSync)
@@ -391,13 +391,13 @@ namespace Luna
         {
             swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 
-            uint32_t presentModeCount{};
-            VkThrowIfFailed(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr));
+            uint32 presentModeCount{};
+            vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
 
             vector<VkPresentModeKHR> presentModes(presentModeCount);
-            VkThrowIfFailed(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data()));
+            vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data());
         
-            for (uint32_t i = 0; i < presentModeCount; ++i)
+            for (uint32 i = 0; i < presentModeCount; ++i)
             {
                 if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
                 {
@@ -407,22 +407,46 @@ namespace Luna
             }
         }
 
-        VkSurfaceCapabilitiesKHR surfCapabilities{};
-        VkThrowIfFailed(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfCapabilities));
+        // Surface Format
+        uint32 surfaceFormatCount{};
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatCount, nullptr);
+
+        vector<VkSurfaceFormatKHR> surfaceFormats(surfaceFormatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatCount, surfaceFormats.data());
+
+        VkSurfaceFormatKHR surfaceFormat = surfaceFormats[0];
+        for (uint32 i = 0; i < surfaceFormatCount; ++i)
+        {
+            if (surfaceFormats[i].format == VK_FORMAT_B8G8R8A8_UNORM &&
+                surfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            {
+                surfaceFormat = surfaceFormats[i];
+                break;
+            }
+        }
+
+        // Surface Capabilities
+        VkSurfaceCapabilitiesKHR surfaceCapabilities{};
+        VkThrowIfFailed(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities));
 
         VkSurfaceTransformFlagBitsKHR preTransform{};
-        if (surfCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
+        if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
             preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
         else
-            preTransform = surfCapabilities.currentTransform;
+            preTransform = surfaceCapabilities.currentTransform;
 
+        backBufferCount = surfaceCapabilities.minImageCount + 1;
+        if (surfaceCapabilities.maxImageCount != 0 && backBufferCount > surfaceCapabilities.maxImageCount)
+			backBufferCount = surfaceCapabilities.maxImageCount;
+
+        // Swapchain
         VkSwapchainCreateInfoKHR swapChainCreateInfo{};
         swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         swapChainCreateInfo.pNext = nullptr;
         swapChainCreateInfo.surface = surface;
         swapChainCreateInfo.minImageCount = backBufferCount;
-        swapChainCreateInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
-        swapChainCreateInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+        swapChainCreateInfo.imageFormat = surfaceFormat.format;
+        swapChainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
         swapChainCreateInfo.imageExtent.width = window->Width();
         swapChainCreateInfo.imageExtent.height = window->Height();
         swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -437,12 +461,15 @@ namespace Luna
 
         VkThrowIfFailed(vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapchain));
 
+        // VkImage
         vector<VkImage> swapchainImages(backBufferCount);
         VkThrowIfFailed(vkGetSwapchainImagesKHR(device, swapchain, &backBufferCount, swapchainImages.data()));
 
+        buffers = new SwapchainBuffer[backBufferCount] {};
         for (uint32 i = 0; i < backBufferCount; ++i)
             buffers[i].image = swapchainImages[i];
 
+        // VkImageView
         for (uint32 i = 0; i < backBufferCount; ++i)
         {
             VkImageViewCreateInfo colorImageView{};
@@ -451,7 +478,7 @@ namespace Luna
             colorImageView.flags = 0;
             colorImageView.image = buffers[i].image;
             colorImageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            colorImageView.format = VK_FORMAT_B8G8R8A8_UNORM;
+            colorImageView.format = surfaceFormat.format;
             colorImageView.components.r = VK_COMPONENT_SWIZZLE_R;
             colorImageView.components.g = VK_COMPONENT_SWIZZLE_G;
             colorImageView.components.b = VK_COMPONENT_SWIZZLE_B;
@@ -466,7 +493,7 @@ namespace Luna
         }
 
         // ---------------------------------------------------
-        // Command Buffer and Command Pool
+        // Command Buffers and Command Pool
         // ---------------------------------------------------
 
         VkCommandPoolCreateInfo cmdPoolCreateInfo{};
@@ -475,21 +502,22 @@ namespace Luna
         cmdPoolCreateInfo.queueFamilyIndex = queueFamilyIndex;
 
         VkThrowIfFailed(vkCreateCommandPool(device, &cmdPoolCreateInfo, nullptr, &commandPool));
-
+        
         VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
         commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         commandBufferAllocateInfo.commandPool = commandPool;
-        commandBufferAllocateInfo.commandBufferCount = 1;
         commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        commandBufferAllocateInfo.commandBufferCount = 1;
 
         VkThrowIfFailed(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &commandBuffer));
+        VkThrowIfFailed(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &copyCommandBuffer));
 
         // ---------------------------------------------------
         // Renderpass
         // ---------------------------------------------------
 
         VkAttachmentDescription attachmentDescription{};
-        attachmentDescription.format = VK_FORMAT_B8G8R8A8_UNORM;
+        attachmentDescription.format = surfaceFormat.format;
         attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
         attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -507,12 +535,23 @@ namespace Luna
         subPassDescription.colorAttachmentCount = 1;
         subPassDescription.pColorAttachments = &colorAttachmentReference;
 
+        VkSubpassDependency subpassDependency{};
+        subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        subpassDependency.dstSubpass = 0;
+        subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpassDependency.srcAccessMask = 0;
+        subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        subpassDependency.dependencyFlags = 0;
+
         VkRenderPassCreateInfo renderPassCreateInfo{};
         renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         renderPassCreateInfo.attachmentCount = 1;
         renderPassCreateInfo.pAttachments = &attachmentDescription;
         renderPassCreateInfo.subpassCount = 1;
         renderPassCreateInfo.pSubpasses = &subPassDescription;
+        renderPassCreateInfo.dependencyCount = 1;
+        renderPassCreateInfo.pDependencies = &subpassDependency;
 
         VkThrowIfFailed(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass));
 
@@ -575,22 +614,18 @@ namespace Luna
         bgColor.float32[3] = 1.0f;
     }
 
-    void Graphics::ResetCommands() const
+    void Graphics::Clear()
     {
-        VkThrowIfFailed(vkWaitForFences(device, 1, &fence, true, UINT64_MAX));
-        VkThrowIfFailed(vkResetFences(device, 1, &fence));
         VkThrowIfFailed(vkResetCommandBuffer(commandBuffer, 0));
-    }
-
-    void Graphics::BeginCommandRecording() const
-    {
-        ResetCommands();
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
         VkThrowIfFailed(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissorRect);  
 
         VkClearValue clearValue{};
         clearValue.color = bgColor;
@@ -602,17 +637,7 @@ namespace Luna
         renderPassInfo.renderArea = scissorRect;
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearValue;
-
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissorRect);
-
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    }
-
-    void Graphics::EndCommandRecording() const
-    {
-        vkCmdEndRenderPass(commandBuffer);
-        VkThrowIfFailed(vkEndCommandBuffer(commandBuffer));
     }
 
     void Graphics::Present()
@@ -621,15 +646,16 @@ namespace Luna
         vkResetFences(device, 1, &fence);
 
         VkThrowIfFailed(vkAcquireNextImageKHR(
-            device, 
-            swapchain, 
-            UINT64_MAX, 
-            imageAvailableSemaphore, 
-            nullptr, 
+            device,
+            swapchain,
+            UINT64_MAX,
+            imageAvailableSemaphore,
+            nullptr,
             &backBufferIndex
         ));
 
-        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        const VkPipelineStageFlags waitStages[]
+        { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -653,7 +679,7 @@ namespace Luna
 
         VkThrowIfFailed(vkQueuePresentKHR(queue, &presentInfo));
     }
-    
+
     static uint32 FindMemoryType(const VkPhysicalDevice physicalDevice, 
         const uint32 typeFilter, 
         const VkMemoryPropertyFlags properties)
@@ -698,8 +724,8 @@ namespace Luna
         VkThrowIfFailed(vkCreateBuffer(device, &bufferInfo, nullptr, buffer));
 
         VkMemoryRequirements memRequirements{};
-        vkGetBufferMemoryRequirements(device, *buffer, &memRequirements);
 
+        vkGetBufferMemoryRequirements(device, *buffer, &memRequirements);
         Allocate(memRequirements.size, memRequirements.memoryTypeBits, properties, bufferMemory);
 
         VkThrowIfFailed(vkBindBufferMemory(device, *buffer, *bufferMemory, 0));
@@ -715,25 +741,22 @@ namespace Luna
 
     void Graphics::Copy(VkBuffer destination, const VkBuffer source, const VkDeviceSize size)
     {
-        ResetCommands();
-
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-        VkThrowIfFailed(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+        VkThrowIfFailed(vkBeginCommandBuffer(copyCommandBuffer, &beginInfo));
 
         VkBufferCopy copyRegion{};
         copyRegion.size = size;
+        vkCmdCopyBuffer(copyCommandBuffer, source, destination, 1, &copyRegion);
 
-        vkCmdCopyBuffer(commandBuffer, source, destination, 1, &copyRegion);
-
-        VkThrowIfFailed(vkEndCommandBuffer(commandBuffer));
+        VkThrowIfFailed(vkEndCommandBuffer(copyCommandBuffer));
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
+        submitInfo.pCommandBuffers = &copyCommandBuffer;
 
         VkThrowIfFailed(vkQueueSubmit(queue, 1, &submitInfo, nullptr));
         VkThrowIfFailed(vkQueueWaitIdle(queue));
