@@ -31,6 +31,7 @@ namespace Luna
         VkSurfaceKHR                 surface;
         VkSwapchainKHR               swapchain;
         SwapchainBuffer            * buffers;
+        uint32                       backBufferIndex;
 
         VkCommandBuffer              commandBuffer;
         VkCommandBuffer              copyCommandBuffer;
@@ -56,6 +57,7 @@ namespace Luna
 
         void VSync(const bool state) noexcept;
         void Initialize(const Window * const window);
+        void Clear();
         void Present();
 
         void Allocate(const VkDeviceSize size,

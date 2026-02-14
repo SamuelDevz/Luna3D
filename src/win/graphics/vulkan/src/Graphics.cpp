@@ -21,6 +21,7 @@ namespace Luna
         device{nullptr},
         surface{nullptr},
         swapchain{nullptr},
+        backBufferIndex{},
         commandBuffer{nullptr}, 
         commandPool{nullptr},
         renderPass{nullptr},
@@ -331,7 +332,7 @@ namespace Luna
             }
         }
 
-        float queuePriorities{};
+        float queuePriorities { 1.0f };
         VkDeviceQueueCreateInfo queueInfo{};
         queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueInfo.pNext = nullptr;
@@ -585,6 +586,32 @@ namespace Luna
 
         VkThrowIfFailed(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &imageAvailableSemaphore));
         VkThrowIfFailed(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphore));
+    }
+
+    void Graphics::Clear()
+    {
+        VkThrowIfFailed(vkResetCommandBuffer(commandBuffer, 0));
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+        VkThrowIfFailed(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissorRect);  
+
+        VkClearValue clearValue{};
+        clearValue.color = bgColor;
+
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = renderPass;
+        renderPassInfo.framebuffer = buffers[backBufferIndex].framebuffer;
+        renderPassInfo.renderArea = scissorRect;
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = &clearValue;
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
 
     void Graphics::Present()
