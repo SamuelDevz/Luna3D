@@ -2,7 +2,7 @@
 
 #include "Types.h"
 #include "Export.h"
-#include <xcb/xcb_errors.h>
+#include "xcb_errors.h"
 
 namespace Luna
 {
