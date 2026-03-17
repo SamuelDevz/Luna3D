@@ -41,7 +41,7 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 
 #### Dependências por Interface:
 - XLib (X11): libx11-dev, libxfixes-dev, libxcursor-dev, libpng-dev.
-- XCB: libxcb1-dev, libxcb-icccm4-dev, libxcb-fixes0-dev, libxcb-errors-dev, libxkbcommon-dev.
+- XCB: libxcb1-dev, libxcb-icccm4-dev, libxcb-xfixes0-dev, libxkbcommon-dev, libxkbcommon-x11-dev, libxcursor-dev, libxcb-keysyms1-dev, libx11-xcb-dev, libpng-dev.
 - Wayland: libwayland-dev, pkg-config, wayland-protocols, libxkbcommon-dev, zenity.
 
 > Dica de Cursor: O Linux utiliza o formato Xcursor. Você pode converter arquivos .cur do Windows usando a ferramenta win2xcur.
