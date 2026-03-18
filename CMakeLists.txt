@@ -24,7 +24,7 @@ add_subdirectory(src)
 
 add_library(Luna-Libraries INTERFACE)
 add_library(Luna::Libraries ALIAS Luna-Libraries)
-target_link_libraries(Luna-Libraries INTERFACE engine window)
+target_link_libraries(Luna-Libraries INTERFACE engine graphics window)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)

@@ -7,5 +7,6 @@
 #include "MessageBox.h"
 #include "Window.h"
 #include "Input.h"
+#include "Graphics.h"
 #include "Game.h"
 #include "Engine.h"

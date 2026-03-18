@@ -6,6 +6,7 @@ using std::format;
 
 namespace Luna 
 {
+    Graphics* Engine::graphics = nullptr;
     Window*   Engine::window = nullptr;
     Input*    Engine::input = nullptr;
     Game*     Engine::game = nullptr;
@@ -16,11 +17,13 @@ namespace Luna
     Engine::Engine() noexcept
     {
         window = new Window();
+        graphics = new Graphics();
     }
 
     Engine::~Engine() noexcept
     {
         delete game;
+        delete graphics;
         delete input;
         delete window;
     }
@@ -32,6 +35,8 @@ namespace Luna
         window->Create();
 
         input = new Input();
+        
+        graphics->Initialize(window);
 
         return Loop();
     }

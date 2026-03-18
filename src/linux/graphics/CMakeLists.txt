@@ -1,0 +1,5 @@
+if(BUILD_VULKAN)
+    add_subdirectory(vulkan)
+else()
+    message(FATAL_ERROR "Please choose a graphics API. Options: BUILD_VULKAN")
+endif()

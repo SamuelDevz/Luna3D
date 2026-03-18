@@ -5,6 +5,7 @@ namespace Luna
 {
     Window*   & Game::window    = Engine::window;
     Input*    & Game::input     = Engine::input;
+    Graphics* & Game::graphics  = Engine::graphics;
     double    & Game::frameTime = Engine::frameTime;
     
     Game::Game() noexcept

@@ -30,6 +30,15 @@ target_include_directories(window PUBLIC include ${WAYLAND_INCLUDE_DIRS} ${XKBCO
 target_link_libraries(window PUBLIC PkgConfig::WAYLAND PkgConfig::XKBCOMMON)
 target_compile_definitions(window PUBLIC $<IF:$<CONFIG:DEBUG>,_DEBUG,NDEBUG>)
 
+# graphics library
+include(FetchContent)
+FetchContent_Declare(
+    graphics
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../graphics
+)
+FetchContent_MakeAvailable(graphics)
+target_compile_definitions(graphics PUBLIC PLATFORM_XLIB)
+
 # engine library
 if(SHARED_LIBRARIES)
     add_library(engine SHARED ${SOURCE_FILES})
@@ -37,4 +46,4 @@ else()
     add_library(engine STATIC ${SOURCE_FILES})
 endif()
 
-target_link_libraries(engine PUBLIC window)
+target_link_libraries(engine PUBLIC window graphics)

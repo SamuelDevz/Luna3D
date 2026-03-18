@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "Input.h"
 #include "Timer.h"
+#include "Graphics.h"
 #include "Game.h"
 #include "Export.h"
 
@@ -18,6 +19,7 @@ namespace Luna
         int32 Loop();
 
     public:
+        static Graphics * graphics;
         static Window * window;
         static Input * input;
         static Game * game;

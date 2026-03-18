@@ -2,6 +2,7 @@
 
 #include "Window.h"
 #include "Input.h"
+#include "Graphics.h"
 #include "Export.h"
 #include <unistd.h>
 
@@ -12,6 +13,7 @@ namespace Luna
     protected:
         static Window*   & window;
         static Input*    & input;
+        static Graphics* & graphics;
         static double    & frameTime;
         
     public:
