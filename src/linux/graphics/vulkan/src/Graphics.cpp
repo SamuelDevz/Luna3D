@@ -2,11 +2,14 @@
 #include "VkError.h"
 #include "Utils.h"
 #include "Plataform.h"
+#include <vector>
+using std::vector;
 
 namespace Luna
 {
     Graphics::Graphics() noexcept
-        : instance{nullptr}
+        : instance{nullptr},
+        physicalDevice{nullptr}
     {
     }
 
@@ -61,5 +64,16 @@ namespace Luna
         instanceInfo.ppEnabledLayerNames = nullptr;
 
         VkThrowIfFailed(vkCreateInstance(&instanceInfo, nullptr, &instance));
+        
+        // ---------------------------------------------------
+        // Physical Device
+        // ---------------------------------------------------
+
+        uint32 gpuCount;
+        VkThrowIfFailed(vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr));
+
+        vector<VkPhysicalDevice> gpus(gpuCount);
+        VkThrowIfFailed(vkEnumeratePhysicalDevices(instance, &gpuCount, gpus.data()));
+        physicalDevice = gpus[0];
     }
 }

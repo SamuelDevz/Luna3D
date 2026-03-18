@@ -11,6 +11,7 @@ namespace Luna
     {
     private:
         VkInstance                   instance;
+        VkPhysicalDevice             physicalDevice;
                 
     public:
         explicit Graphics() noexcept;
