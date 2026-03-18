@@ -1,4 +1,5 @@
-set(SOURCE_FILES src/VkError.cpp
+set(SOURCE_FILES src/Logger.cpp
+    src/VkError.cpp
     src/Graphics.cpp)
 
 if(SHARED_LIBRARIES)
