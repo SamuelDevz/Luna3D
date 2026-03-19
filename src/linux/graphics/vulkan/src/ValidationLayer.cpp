@@ -79,6 +79,7 @@ namespace Luna
         {
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
                 logger->OutputDebug(LOG_LEVEL_ERROR, format("{}\n", pCallbackData->pMessage));
+                usleep(1500000);
                 break;
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
                 logger->OutputDebug(LOG_LEVEL_WARN, format("{}\n", pCallbackData->pMessage));
@@ -90,7 +91,7 @@ namespace Luna
                 logger->OutputDebug(LOG_LEVEL_TRACE, format("{}\n", pCallbackData->pMessage));
                 break;
         }
-        usleep(1500000);
+        
         return VK_FALSE;
     }
 }
