@@ -40,7 +40,7 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 ### Linux
 
 #### Dependências por Interface:
-- XLib (X11): libx11-dev, libxfixes-dev, libxcursor-dev, libpng-dev.
+- XLib (X11): libx11-dev, libxfixes-dev, libxcursor-dev, libpng-dev, libxinerama-dev, libxrandr-dev.
 - XCB: libxcb1-dev, libxcb-icccm4-dev, libxcb-xfixes0-dev, libxkbcommon-dev, libxkbcommon-x11-dev, libxcursor-dev, libxcb-keysyms1-dev, libx11-xcb-dev, libpng-dev.
 - Wayland: libwayland-dev, pkg-config, wayland-protocols, libxkbcommon-dev, zenity.
 
