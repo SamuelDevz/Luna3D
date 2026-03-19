@@ -2,6 +2,7 @@
 
 #include "Types.h"
 #include "Export.h"
+#include "Logger.h"
 #include "Window.h"
 #include <vulkan/vulkan.h>
 
@@ -12,8 +13,12 @@ namespace Luna
     private:
         VkInstance                   instance;
         VkPhysicalDevice             physicalDevice;
-                
+        
+        void LogHardwareInfo() const;
+        
     public:
+        static Logger logger;
+        
         explicit Graphics() noexcept;
         ~Graphics() noexcept;
 
