@@ -1,5 +1,6 @@
 set(SOURCE_FILES src/Logger.cpp
     src/VkError.cpp
+    src/ValidationLayer.cpp
     src/Graphics.cpp)
 
 if(SHARED_LIBRARIES)
