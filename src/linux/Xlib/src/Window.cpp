@@ -3,7 +3,13 @@
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 #include <X11/Xatom.h>
+#include <X11/extensions/Xinerama.h>
+#include <X11/extensions/Xrandr.h>
 #include <png.h>
+#include <iostream>
+#include <format>
+using std::cout;
+using std::format;
 
 #define _NET_WM_STATE_REMOVE        0    // remove/unset property
 #define _NET_WM_STATE_ADD           1    // add/set property
@@ -276,6 +282,55 @@ namespace Luna
             1
         );
     }
+    
+    static void LogMonitors(Display * display, const XWindow window)
+    {
+        XRRScreenResources * const res = XRRGetScreenResourcesCurrent(display, window);
+        
+        for (int i = 0; i < res->noutput; ++i)
+        {
+            XRROutputInfo * const outputInfo = XRRGetOutputInfo(display, res, res->outputs[i]);
+    
+            if (!outputInfo || outputInfo->connection != RR_Connected) 
+            {
+                if (outputInfo) XRRFreeOutputInfo(outputInfo);
+                continue;
+            }
+    
+            const string_view monitorName(outputInfo->name, outputInfo->nameLen);
+            XRRCrtcInfo * const monitor = XRRGetCrtcInfo(display, res, outputInfo->crtc);
+    
+            if (!monitor) 
+            {
+                XRRFreeOutputInfo(outputInfo);
+                continue;
+            }
+    
+            double refreshRate{};
+            for (int j = 0; j < res->nmode; ++j) 
+            {
+                if (res->modes[j].id == monitor->mode && res->modes[j].hTotal && res->modes[j].vTotal) 
+                {
+                    refreshRate = res->modes[j].dotClock / static_cast<double>(res->modes[j].hTotal * res->modes[j].vTotal);
+                    break;
+                }
+            }
+            
+            constexpr const char* LOG_LEVEL_INFO = "\033[32m";
+            constexpr const char* ANSI_REST = "\033[0m";
+            
+            cout << format("{}[INFO]: ---> Monitor: {}{}\n",
+                LOG_LEVEL_INFO, monitorName, ANSI_REST);
+            
+            cout << format("{}[INFO]: ---> Resolution: {}x{} {}Hz{}\n",
+                LOG_LEVEL_INFO, monitor->width, monitor->height, refreshRate, ANSI_REST);
+    
+            XRRFreeCrtcInfo(monitor);
+            XRRFreeOutputInfo(outputInfo);
+        }
+    
+        XRRFreeScreenResources(res);
+    }
 
     bool Window::Create() noexcept
     {
@@ -302,6 +357,8 @@ namespace Luna
 
         if(!window)
             return false;
+        
+        LogMonitors(display, window);
 
         XStoreName(display, window, windowTitle.c_str());
         
