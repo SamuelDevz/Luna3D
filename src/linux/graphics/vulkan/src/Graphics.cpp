@@ -222,7 +222,12 @@ namespace Luna
         instanceInfo.ppEnabledExtensionNames = instanceExtensions;
         instanceInfo.enabledLayerCount = 0;
         instanceInfo.ppEnabledLayerNames = nullptr;
-
+        
+    #ifdef _DEBUG
+        instanceInfo.enabledLayerCount = Countof(instanceLayers);
+        instanceInfo.ppEnabledLayerNames = instanceLayers;
+    #endif
+    
         VkThrowIfFailed(vkCreateInstance(&instanceInfo, nullptr, &instance));
         
     #ifdef _DEBUG
