@@ -16,6 +16,8 @@ namespace Luna
         
         void LogHardwareInfo() const;
         
+        ValidationLayer * validationlayer;
+        
     public:
         static Logger logger;
         

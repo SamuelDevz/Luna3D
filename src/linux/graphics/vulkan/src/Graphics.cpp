@@ -17,10 +17,13 @@ namespace Luna
         : instance{nullptr},
         physicalDevice{nullptr}
     {
+        validationlayer = new ValidationLayer();
     }
 
     Graphics::~Graphics() noexcept
     {
+        SafeDelete(validationlayer);
+        
         vkDestroyInstance(instance, nullptr);
     }
     
@@ -222,6 +225,10 @@ namespace Luna
 
         VkThrowIfFailed(vkCreateInstance(&instanceInfo, nullptr, &instance));
         
+    #ifdef _DEBUG
+        validationlayer->Initialize(instance, &logger);
+    #endif
+    
         // ---------------------------------------------------
         // Physical Device
         // ---------------------------------------------------
