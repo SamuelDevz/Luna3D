@@ -22,8 +22,12 @@ namespace Luna
     Input::~Input() noexcept
     {
         XUnsetICFocus(xic);
-        if (xic) XDestroyIC(xic);
-		if (xim) XCloseIM(xim);
+
+        if (xic)
+            XDestroyIC(xic);
+
+        if (xim)
+		    XCloseIM(xim);
     }
 
     void Input::Initialize(Display * display, XWindow window, XEvent * event)
@@ -81,14 +85,14 @@ namespace Luna
         return val;
     }
 
-    string LookupText(XIC xic, XKeyEvent * keyboard) 
+    string LookupText(XIC xic, XKeyEvent * keyboard)
     {
         string buffer;
         buffer.resize(2);
         KeySym ks{};
         Status status;
 
-        int length = XmbLookupString(xic, keyboard, &buffer[0], buffer.size(), nullptr, &status);
+        int32 length = XmbLookupString(xic, keyboard, &buffer[0], buffer.size(), nullptr, &status);
         buffer.resize(length);
         length = XmbLookupString(xic, keyboard, &buffer[0], buffer.size(), nullptr, &status);
 
@@ -109,7 +113,7 @@ namespace Luna
             case MappingNotify:
                 XRefreshKeyboardMapping(&event->xmapping);
                 break;
-                
+
             case KeyPress:
                 KeySym key = XLookupKeysym(&event->xkey, 0);
 
@@ -123,7 +127,7 @@ namespace Luna
                 case VK_TAB:
                     Input::InputProc(event);
                     break;
-                
+
                 case VK_RETURN:
                     read = false;
                     break;
@@ -137,23 +141,23 @@ namespace Luna
         Input::InputProc(event);
     }
 
-    void Input::InputProc(XEvent * event)
+    void Input::InputProc(const XEvent * const event)
     {
         switch(event->type)
         {
         case KeyPress:
             keys[event->xkey.keycode] = true;
             break;
-        
+
         case KeyRelease:
             keys[event->xkey.keycode] = false;
             break;
-        
+
         case MotionNotify:
             mouseX = event->xmotion.x;
             mouseY = event->xmotion.y;
             break;
-        
+
         case ButtonPress:
             switch(event->xbutton.button)
             {

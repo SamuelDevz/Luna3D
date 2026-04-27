@@ -5,32 +5,25 @@
 #include <X11/Xatom.h>
 #include <png.h>
 
-#define _NET_WM_STATE_REMOVE        0    // remove/unset property
-#define _NET_WM_STATE_ADD           1    // add/set property
-#define _NET_WM_STATE_TOGGLE        2    // toggle property
-
-#define MWM_HINTS_DECORATIONS   2
-#define MWM_DECOR_ALL           1
-
 namespace Luna
 {
     void (*Window::inFocus)() = nullptr;
     void (*Window::lostFocus)() = nullptr;
 
-    Window::Window() noexcept 
-        : window{}, 
-        windowPosX{}, 
-        windowPosY{}, 
+    Window::Window() noexcept
+        : windowHandle{},
+        windowPosX{},
+        windowPosY{},
         windowIcon{}
     {
         XInitThreads();
 
-        display = XOpenDisplay(nullptr);
-        screen = DefaultScreenOfDisplay(display);
-        windowWidth = screen->width;
-        windowHeight = screen->height;
-        windowCursor = XCreateFontCursor(display, XC_left_ptr);
-        windowColor.pixel = WhitePixel(display, DefaultScreen(display));
+        windowDisplay = XOpenDisplay(nullptr);
+        windowScreen = DefaultScreenOfDisplay(windowDisplay);
+        windowWidth = windowScreen->width;
+        windowHeight = windowScreen->height;
+        windowCursor = XCreateFontCursor(windowDisplay, XC_left_ptr);
+        windowColor.pixel = WhitePixel(windowDisplay, DefaultScreen(windowDisplay));
         windowTitle = string("Windows Game");
         windowMode = FULLSCREEN;
         windowCenterX = windowWidth / 2;
@@ -39,34 +32,36 @@ namespace Luna
 
     Window::~Window() noexcept
     {
-        XFreeCursor(display, windowCursor);
-        XUnmapWindow(display, window);
-        XDestroyWindow(display, window);
-        XCloseDisplay(display);
+        XFreeColors(windowDisplay, DefaultColormap(windowDisplay, DefaultScreen(windowDisplay)), &windowColor.pixel, 1, 0);
+        XFreeCursor(windowDisplay, windowCursor);
+        XUnmapWindow(windowDisplay, windowHandle);
+        XDestroyWindow(windowDisplay, windowHandle);
+        XCloseDisplay(windowDisplay);
     }
-    
+
     uint32 Window::GetColor(const char * color) noexcept
     {
         XColor hex{};
-        XParseColor(display, DefaultColormap(display, 0), color, &hex);
-        XAllocColor(display, DefaultColormap(display, 0), &hex);
+        XParseColor(windowDisplay, DefaultColormap(windowDisplay, 0), color, &hex);
+        XAllocColor(windowDisplay, DefaultColormap(windowDisplay, 0), &hex);
         return hex.pixel;
     }
 
     void Window::Size(const uint32 width, const uint32 height) noexcept
-    { 
-        windowWidth = width; 
+    {
+        windowWidth = width;
         windowHeight = height;
 
         windowCenterX = windowWidth / 2;
         windowCenterY = windowHeight / 2;
 
-        windowPosX = (screen->width - windowWidth) / 2;
-        windowPosY = (screen->height - windowHeight) / 2;
+        windowPosX = (windowScreen->width - windowWidth) / 2;
+        windowPosY = (windowScreen->height - windowHeight) / 2;
     }
 
-    static void SendEventToWM(Display * display, XWindow window, Atom type, 
-        long eventMask, long a, long b, long c = 0, long d = 0, long e = 0)
+    static void SendEventToWM(Display * display, XWindow window, Atom type,
+        uint64 eventMask, const uint64 a, const uint64 b, 
+        const uint64 c = 0, const uint64 d = 0, const uint64 e = 0)
     {
         XEvent event{};
         event.type = ClientMessage;
@@ -83,12 +78,14 @@ namespace Luna
         XFlush(display);
     }
 
-    static void X11ChangeProperty(Display * display, XWindow window, Atom property, 
-        Atom type, const unsigned char*	data, int nelements)
+    static void X11ChangeProperty(Display * display, XWindow window, Atom property,
+        Atom type, const uint8*	data, int32 nelements)
     {
-        XChangeProperty(display, window,
+        XChangeProperty(
+            display,
+            window,
             property,
-            type, 
+            type,
             32,
             PropModeReplace,
             data,
@@ -98,69 +95,72 @@ namespace Luna
 
     void Window::Close() noexcept
     {
-        SendEventToWM(display, window, 
-            wmProtocols, 
-            NoEventMask, 
-            wmDeleteWindow, 
-            CurrentTime);
+        SendEventToWM(
+            windowDisplay,
+            windowHandle,
+            wmProtocols,
+            NoEventMask,
+            wmDeleteWindow,
+            CurrentTime
+        );
     }
 
-    bool LoadPNG(const string_view filename, unsigned char ** imageData, int & width, int & height)
+    static bool LoadPNG(const string_view filename, uint8 ** imageData, int32 & width, int32 & height)
     {
         FILE *fp = fopen(filename.data(), "rb");
         if (!fp)
             return false;
-    
+
         png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-        if (!png) 
+        if (!png)
         {
             fclose(fp);
             return false;
         }
-    
+
         png_infop info = png_create_info_struct(png);
-        if (!info) 
+        if (!info)
         {
             png_destroy_read_struct(&png, nullptr, nullptr);
             fclose(fp);
             return false;
         }
-    
-        if (setjmp(png_jmpbuf(png))) 
+
+        if (setjmp(png_jmpbuf(png)))
         {
             png_destroy_read_struct(&png, &info, nullptr);
             fclose(fp);
             return false;
         }
-    
+
         png_init_io(png, fp);
         png_read_info(png, info);
-    
+
         width = png_get_image_width(png, info);
         height = png_get_image_height(png, info);
-        png_byte bitDepth = png_get_bit_depth(png, info);
-        png_byte colorType = png_get_color_type(png, info);
-    
-        if (colorType == PNG_COLOR_TYPE_PALETTE) 
+        const png_byte bitDepth = png_get_bit_depth(png, info);
+        const png_byte colorType = png_get_color_type(png, info);
+
+        if (colorType == PNG_COLOR_TYPE_PALETTE)
             png_set_palette_to_rgb(png);
 
-        if (colorType == PNG_COLOR_TYPE_GRAY && bitDepth < 8) 
+        if (colorType == PNG_COLOR_TYPE_GRAY && bitDepth < 8)
             png_set_expand_gray_1_2_4_to_8(png);
-        
+
         if (png_get_valid(png, info, PNG_INFO_tRNS))
             png_set_tRNS_to_alpha(png);
 
         if (bitDepth == 16)
             png_set_strip_16(png);
-    
+
         png_set_expand(png);
         png_read_update_info(png, info);
-    
-        *imageData = new unsigned char[png_get_rowbytes(png, info) * height];
+
+        *imageData = new uint8[png_get_rowbytes(png, info) * height];
         png_bytep* rowPointers = new png_bytep[height];
-        for (int y = 0; y < height; ++y)
+        for (size_t y = 0; y < height; ++y)
             rowPointers[y] = *imageData + y * png_get_rowbytes(png, info);
-    
+
         png_read_image(png, rowPointers);
         png_destroy_read_struct(&png, &info, nullptr);
         delete[] rowPointers;
@@ -169,80 +169,102 @@ namespace Luna
         return true;
     }
 
-    void SetIcon(Display * display, XWindow window, const string_view filename)
+    static void SetIcon(Display * display, XWindow window, const string_view filename)
     {
-        int width, height;
-        unsigned char * dataImage;
+        int32 width, height;
+        uint8 * dataImage;
         LoadPNG(filename.data(), &dataImage, width, height);
 
-        int longCount = 2 + width * height;
+        int32 longCount = 2 + width * height;
 
-        unsigned long* icon = new unsigned long[longCount * sizeof(unsigned long)];
-        unsigned long* target = icon;
+        uint64* icon = new uint64[longCount * sizeof(uint64)];
+        uint64* target = icon;
 
         *target++ = width;
         *target++ = height;
 
-        for (int i = 0; i < width * height; ++i)
+        for (size_t i = 0; i < width * height; ++i)
         {
-            *target++ = 
+            *target++ =
             ((dataImage[i * 4 + 2])) |
             ((dataImage[i * 4 + 1]) << 8) |
             ((dataImage[i * 4 + 0]) << 16) |
             ((dataImage[i * 4 + 3]) << 24);
         }
 
-        Atom netWmIcon = XInternAtom(display, "_NET_WM_ICON", false);
-        X11ChangeProperty(display, window,
-            netWmIcon,
-            XA_CARDINAL, 
-            (unsigned char*) icon,
-            longCount);
+        Atom _NET_WM_ICON = XInternAtom(display, "_NET_WM_ICON", false);
+        X11ChangeProperty(
+            display,
+            window,
+            _NET_WM_ICON,
+            XA_CARDINAL,
+            reinterpret_cast<uint8*>(icon),
+            longCount
+        );
 
         delete[] icon;
     }
 
-    void Fullscreen(Display *display, XWindow window)
+    static void Fullscreen(Display *display, XWindow window)
     {
-        Atom netWmState = XInternAtom(display, "_NET_WM_STATE", false);
-        Atom netWmStateFullscreen = XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", false);
+        Atom _NET_WM_STATE = XInternAtom(display, "_NET_WM_STATE", false);
+        Atom _NET_WM_STATE_FULLSCREEN = XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", false);
 
         XSizeHints sizehints{};
-        long flags{};
-        XGetWMNormalHints(display, window, &sizehints, &flags);
+        int64 flags{};
+        XGetWMNormalHints(display, window, &sizehints, reinterpret_cast<long int*>(&flags));
 
         sizehints.flags &= ~(PMinSize | PMaxSize);
         XSetWMNormalHints(display, window, &sizehints);
 
-        SendEventToWM(display, RootWindow(display, 0), 
-            netWmState, 
-            SubstructureNotifyMask | SubstructureRedirectMask, 
-            _NET_WM_STATE_ADD, 
-            netWmStateFullscreen);
+        enum
+        {
+            _NET_WM_STATE_REMOVE = 0,
+            _NET_WM_STATE_ADD,
+            _NET_WM_STATE_TOGGLE,
+        };
+
+        SendEventToWM(
+            display,
+            RootWindow(display, 0),
+            _NET_WM_STATE,
+            SubstructureNotifyMask | SubstructureRedirectMask,
+            _NET_WM_STATE_ADD,
+            _NET_WM_STATE_FULLSCREEN
+        );
     }
 
-    void Borderless(Display * display, XWindow window)
+    static void Borderless(Display * display, XWindow window)
     {
         struct
         {
-            unsigned long flags;
-            unsigned long functions;
-            unsigned long decorations;
-            long input_mode;
-            unsigned long status;
+            uint64 flags;
+            uint64 functions;
+            uint64 decorations;
+            int64 input_mode;
+            uint64 status;
         } hints = {};
-    
+
+        enum
+        {
+            MWM_DECOR_ALL = 1,
+            MWM_HINTS_DECORATIONS = 2,
+        };
+
         hints.flags = MWM_HINTS_DECORATIONS;
-        
-        Atom motifwmHints = XInternAtom(display, "_MOTIF_WM_HINTS", false);
-        X11ChangeProperty(display, window,
-            motifwmHints,
-            motifwmHints, 
-            reinterpret_cast<unsigned char*>(&hints),
-            sizeof(hints) / sizeof(long));
+
+        Atom _MOTIF_WM_HINTS = XInternAtom(display, "_MOTIF_WM_HINTS", false);
+        X11ChangeProperty(
+            display,
+            window,
+            _MOTIF_WM_HINTS,
+            _MOTIF_WM_HINTS,
+            reinterpret_cast<uint8*>(&hints),
+            sizeof(hints) / sizeof(int64)
+        );
     }
 
-    void SetAtoms(Display * display, XWindow window, uint32 windowMode)
+    static void SetAtoms(Display * display, XWindow window, uint32 windowMode)
     {
         if(windowMode == BORDERLESS)
             Borderless(display, window);
@@ -250,36 +272,42 @@ namespace Luna
             Fullscreen(display, window);
 
         auto pid = getpid();
-        Atom newWmPid = XInternAtom(display, "_NET_WM_PID", false);
-        X11ChangeProperty(display, window, 
-            newWmPid, 
-            XA_CARDINAL, 
-            reinterpret_cast<unsigned char *>(&pid), 
+        Atom _NET_WM_PID = XInternAtom(display, "_NET_WM_PID", false);
+        X11ChangeProperty(
+            display,
+            window,
+            _NET_WM_PID,
+            XA_CARDINAL,
+            reinterpret_cast<uint8*>(&pid),
             1
         );
 
-        Atom newWmWindowType = XInternAtom(display, "_NET_WM_WINDOW_TYPE", false);
-        Atom newWmWindowTypeNormal = XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", false);
-        X11ChangeProperty(display, window, 
-            newWmWindowType,
-            XA_ATOM, 
-            reinterpret_cast<unsigned char *>(&newWmWindowTypeNormal), 
+        Atom _NET_WM_WINDOW_TYPE = XInternAtom(display, "_NET_WM_WINDOW_TYPE", false);
+        Atom _NET_WM_WINDOW_TYPE_NORMAL = XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", false);
+        X11ChangeProperty(
+            display,
+            window,
+            _NET_WM_WINDOW_TYPE,
+            XA_ATOM,
+            reinterpret_cast<uint8*>(&_NET_WM_WINDOW_TYPE_NORMAL),
             1
         );
 
-        long compositor = 1;
-        Atom newWmBypassCompositor = XInternAtom(display, "_NET_WM_BYPASS_COMPOSITOR", false);
-        X11ChangeProperty(display, window, 
-            newWmBypassCompositor, 
-            XA_CARDINAL, 
-            reinterpret_cast<unsigned char *>(&compositor), 
+        uint8 compositor = 1;
+        Atom _NET_WM_BYPASS_COMPOSITOR = XInternAtom(display, "_NET_WM_BYPASS_COMPOSITOR", false);
+        X11ChangeProperty(
+            display,
+            window,
+            _NET_WM_BYPASS_COMPOSITOR,
+            XA_CARDINAL,
+            &compositor,
             1
         );
     }
 
     bool Window::Create() noexcept
     {
-        if(!display)
+        if(!windowDisplay)
             return false;
 
         XSetWindowAttributes attributes{};
@@ -292,19 +320,25 @@ namespace Luna
             | FocusChangeMask
             | ButtonMotionMask;
         uint32 valueMask = CWBackPixel | CWBorderPixel | CWEventMask;
-        
-        window = XCreateWindow(display, RootWindow(display, 0),
+
+        windowHandle = XCreateWindow(
+            windowDisplay,
+            RootWindow(windowDisplay, 0),
             windowPosX, windowPosY,
             windowWidth, windowHeight,
-            0, CopyFromParent, InputOutput, CopyFromParent,
-            valueMask, &attributes
+            0,
+            CopyFromParent,
+            InputOutput,
+            CopyFromParent,
+            valueMask,
+            &attributes
         );
 
-        if(!window)
+        if(!windowHandle)
             return false;
 
-        XStoreName(display, window, windowTitle.c_str());
-        
+        XStoreName(windowDisplay, windowHandle, windowTitle.c_str());
+
         XSizeHints sizeHints{};
         sizeHints.flags = PMaxSize | PMinSize | USPosition;
         sizeHints.x = windowPosX;
@@ -316,28 +350,38 @@ namespace Luna
         wmHints.initial_state = NormalState;
         wmHints.input = true;
         wmHints.flags = StateHint | InputHint;
-        XSetWMProperties(display, window, nullptr, nullptr, nullptr, 0, &sizeHints, &wmHints, nullptr);
+        XSetWMProperties(
+            windowDisplay,
+            windowHandle,
+            nullptr,
+            nullptr,
+            nullptr,
+            0,
+            &sizeHints,
+            &wmHints,
+            nullptr
+        );
 
-        wmDeleteWindow = XInternAtom(display, "WM_DELETE_WINDOW", false);
-        wmProtocols = XInternAtom(display, "WM_PROTOCOLS", false);
-        if(!XSetWMProtocols(display, window, &wmDeleteWindow, 1))
+        wmDeleteWindow = XInternAtom(windowDisplay, "WM_DELETE_WINDOW", false);
+        wmProtocols = XInternAtom(windowDisplay, "WM_PROTOCOLS", false);
+        if(!XSetWMProtocols(windowDisplay, windowHandle, &wmDeleteWindow, 1))
             return false;
 
-        XMapRaised(display, window);
+        XMapRaised(windowDisplay, windowHandle);
 
-        SetAtoms(display, window, windowMode);
+        SetAtoms(windowDisplay, windowHandle, windowMode);
 
-        XDefineCursor(display, window, windowCursor);
-        
+        XDefineCursor(windowDisplay, windowHandle, windowCursor);
+
         if(!windowIcon.empty())
-            SetIcon(display, window, windowIcon);
-        
-        XFlush(display);
+            SetIcon(windowDisplay, windowHandle, windowIcon);
+
+        XFlush(windowDisplay);
 
         return true;
     }
 
-    void Window::WinProc(XEvent * event)
+    void Window::WinProc(const XEvent * const event)
     {
         switch(event->type)
         {

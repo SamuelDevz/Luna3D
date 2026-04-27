@@ -16,9 +16,9 @@ namespace Luna
     class DLL Window
     {
     private:
-        Display*    display;
-        XWindow     window;
-        Screen*     screen;
+        Display*    windowDisplay;
+        XWindow     windowHandle;
+        Screen*     windowScreen;
         int32		windowWidth;
         int32		windowHeight;
         string      windowIcon;
@@ -69,14 +69,14 @@ namespace Luna
         void InFocus(void(*func)()) noexcept;
         void LostFocus(void(*func)()) noexcept;
 
-        static void WinProc(XEvent * event);
+        static void WinProc(const XEvent * const event);
     };
 
     inline Display* Window::XDisplay() const noexcept
-    { return display; }
+    { return windowDisplay; }
 
     inline XWindow Window::Id() const noexcept
-    { return window; }
+    { return windowHandle; }
         
     inline Atom Window::WMDeleteWindow() const noexcept
     { return wmDeleteWindow; }
@@ -109,7 +109,7 @@ namespace Luna
     { windowIcon = filename; }
 
     inline void Window::Cursor(const string_view filename) noexcept
-    { windowCursor = XcursorFilenameLoadCursor(display, filename.data()); }
+    { windowCursor = XcursorFilenameLoadCursor(windowDisplay, filename.data()); }
 
     inline void Window::Title(const string_view title) noexcept
     { windowTitle = title; }
@@ -121,7 +121,7 @@ namespace Luna
     { windowColor.pixel = GetColor(hex.data()); }
     
     inline void Window::HideCursor(const bool hide) const noexcept
-    { hide ? XFixesHideCursor(display, window) : XFixesShowCursor(display, window); }
+    { hide ? XFixesHideCursor(windowDisplay, windowHandle) : XFixesShowCursor(windowDisplay, windowHandle); }
 
     inline void Window::InFocus(void(*func)()) noexcept
     { inFocus = func; }

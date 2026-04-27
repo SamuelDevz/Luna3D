@@ -31,7 +31,7 @@ namespace Luna
         static void Pause() noexcept;
         static void Resume() noexcept;
 
-        static void EngineProc(XEvent * event);
+        static void EngineProc(const XEvent * const event);
     };
 
     inline void Engine::Pause() noexcept

@@ -11,9 +11,9 @@ namespace Luna
     class DLL Input
     {
     private:
-        static Display * display;
+        static Display* display;
         static XWindow window;
-        static XEvent * event;
+        static XEvent* event;
 
         static bool	keys[MAX_KEYS];
         static bool ctrl[MAX_KEYS];
@@ -43,7 +43,7 @@ namespace Luna
         static const char* Text() noexcept;
 
         static void Reader(XEvent * event);
-        static void InputProc(XEvent * event);
+        static void InputProc(const XEvent * const event);
     };
 
     inline bool Input::KeyDown(const uint32 vkcode) const noexcept
