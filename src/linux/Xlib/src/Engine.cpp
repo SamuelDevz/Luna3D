@@ -4,7 +4,7 @@
 #include <format>
 using std::format;
 
-namespace Luna 
+namespace Luna
 {
     Window*   Engine::window = nullptr;
     Input*    Engine::input = nullptr;
@@ -52,21 +52,21 @@ namespace Luna
 
         if (totalTime >= 1.0)
         {
-            string titleStr = format("{}    FPS: {}    Frame Time: {:.3f} (ms)",
+            string title = format("{}    FPS: {}    Frame Time: {:.3f} (ms)",
                 window->Title().c_str(), frameCount, frameTime * 1000);
 
-            static Atom netWmName = XInternAtom(window->XDisplay(), "_NET_WM_NAME", false);
-            static Atom utf8String = XInternAtom(window->XDisplay(), "UTF8_STRING", false);
+            static Atom _NET_WM_NAME = XInternAtom(window->XDisplay(), "_NET_WM_NAME", false);
+            static Atom UTF8_STRING = XInternAtom(window->XDisplay(), "UTF8_STRING", false);
 
             XChangeProperty(
                 window->XDisplay(),
                 window->Id(),
-                netWmName,
-                utf8String,
+                _NET_WM_NAME,
+                UTF8_STRING,
                 8,
                 PropModeReplace,
-                reinterpret_cast<const unsigned char*>(titleStr.c_str()),
-                static_cast<int32>(titleStr.size())
+                reinterpret_cast<const uint8*>(title.c_str()),
+                static_cast<int32>(title.size())
             );
 
             XChangeProperty(
@@ -76,8 +76,8 @@ namespace Luna
                 XA_STRING,
                 8,
                 PropModeReplace,
-                reinterpret_cast<const unsigned char*>(titleStr.c_str()),
-                static_cast<int32>(titleStr.size())
+                reinterpret_cast<const uint8*>(title.c_str()),
+                static_cast<int32>(title.size())
             );
 
             frameCount = 0;
@@ -132,7 +132,7 @@ namespace Luna
         return 0;
     }
 
-    void Engine::EngineProc(XEvent * event)
+    void Engine::EngineProc(const XEvent * const event)
     {
         if (event->type == Expose)
             game->Display();
