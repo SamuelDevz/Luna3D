@@ -105,16 +105,15 @@ namespace Luna
 
         do
         {
-            while (XPending(window->XDisplay()) > 0)
+            while (XPending(window->XDisplay()))
             {
                 XNextEvent(window->XDisplay(), &event);
-                
-                if (input->XKeyPress(VK_PAUSE))
-                    (paused) ? Resume() : Pause();
-                
                 EngineProc(&event);
             }
-
+            
+            if (input->XKeyPress(VK_PAUSE))
+                (paused) ? Resume() : Pause();
+            
             if (!paused)
             {
                 frameTime = FrameTime();
