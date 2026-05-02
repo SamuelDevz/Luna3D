@@ -181,7 +181,7 @@ namespace Luna
         }
     }
 
-    void Input::InputProc(xcb_generic_event_t* event)
+    void Input::InputProc(xcb_generic_event_t* const event)
     {
         switch (event->response_type & 0x7f)
         {

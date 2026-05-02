@@ -53,7 +53,7 @@ namespace Luna
         static const char* Text() noexcept;
 
         static void Reader(xcb_generic_event_t * event);
-        static void InputProc(xcb_generic_event_t * event);
+        static void InputProc(xcb_generic_event_t * const event);
     };
 
     inline bool Input::KeyDown(const uint32 vkcode) const noexcept
