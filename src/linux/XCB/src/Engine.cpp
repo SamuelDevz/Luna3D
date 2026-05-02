@@ -98,14 +98,14 @@ namespace Luna
                     quit = true;
                 
                 EngineProc(event);
-                if (input->XKeyPress(VK_PAUSE))
-                    (paused) ? Resume() : Pause();
-
                 free(event);
 
                 if(quit)
                     break;
             }
+
+            if (input->XKeyPress(VK_PAUSE))
+                (paused) ? Resume() : Pause();
             
             if (!paused)
             {
