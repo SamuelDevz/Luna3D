@@ -89,23 +89,22 @@ namespace Luna
         xcb_generic_event_t * event = nullptr;
         input->Initialize(window->Connection(), window->Id(), event);
 
+        bool quit = false;
         do
         {
             while ((event = xcb_poll_for_event(window->Connection())) != nullptr)
             {
                 if (Quit(event, window->WMDeleteWindow()))
-                {
-                    delete event;
-                    game->Finalize();
-                    return 0;
-                }
+                    quit = true;
                 
                 EngineProc(event);
-                
                 if (input->XKeyPress(VK_PAUSE))
                     (paused) ? Resume() : Pause();
-                
-                delete event;
+
+                free(event);
+
+                if(quit)
+                    break;
             }
             
             if (!paused)
@@ -118,8 +117,9 @@ namespace Luna
             {
                 game->OnPause();
             }
-        } while (true);
+        } while (!quit);
 
+        game->Finalize();
         return 0;
     }
 
