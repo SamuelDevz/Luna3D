@@ -83,9 +83,10 @@ namespace Luna
 
     int32 Engine::Loop()
     {
-        xcb_generic_event_t *event;
+        timer.Start();
         game->Init();
 
+        xcb_generic_event_t * event = nullptr;
         input->Initialize(window->Connection(), window->Id(), event);
 
         do
