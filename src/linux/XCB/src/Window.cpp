@@ -1,4 +1,5 @@
 #include "Window.h"
+#include <X11/Xlib-xcb.h>
 #include <xcb/xcb_icccm.h>
 #include <unistd.h>
 #include <png.h>
@@ -9,59 +10,50 @@ namespace Luna
     void (*Window::lostFocus)() = nullptr;
 
     Window::Window() noexcept 
-        : window{}, 
+        : windowHandle{}, 
         windowPosX{}, 
         windowPosY{}
     {
-        XInitThreads();
-
-        display = XOpenDisplay(nullptr);
-        connection = XGetXCBConnection(display);
-        windowCursor = XcursorFilenameLoadCursor(display, "left_ptr");
-        window = xcb_generate_id(connection);
-        screen = xcb_setup_roots_iterator(xcb_get_setup(connection)).data;
-        windowWidth = screen->width_in_pixels;
-        windowHeight = screen->height_in_pixels;
-        windowColor = screen->white_pixel;
+        windowDisplay = XOpenDisplay(nullptr);
+        windowConnection = XGetXCBConnection(windowDisplay);
+        windowCursor = XcursorFilenameLoadCursor(windowDisplay, "left_ptr");
+        windowHandle = xcb_generate_id(windowConnection);
+        windowScreen = xcb_setup_roots_iterator(xcb_get_setup(windowConnection)).data;
+        windowWidth = windowScreen->width_in_pixels;
+        windowHeight = windowScreen->height_in_pixels;
+        windowColor = windowScreen->white_pixel;
         windowTitle = string("Window Game");
         windowMode = FULLSCREEN;
         windowCenterX = windowWidth / 2;
         windowCenterY = windowHeight / 2;
 
-        XSetEventQueueOwner(display, XCBOwnsEventQueue);
+        XSetEventQueueOwner(windowDisplay, XCBOwnsEventQueue);
     }
 
     Window::~Window() noexcept
     {
-        xcb_unmap_window(connection, window);
-        xcb_destroy_window(connection, window);
-        xcb_disconnect(connection);
+        xcb_unmap_window(windowConnection, windowHandle);
+        xcb_destroy_window(windowConnection, windowHandle);
+        xcb_disconnect(windowConnection);
     }
 
-    uint32 Window::GetColor(const string hexColor) noexcept
+    uint32 Window::GetColor(const string && hexColor) noexcept
     {
-        const string redStr = hexColor.substr(1, 2);
-        const string greenStr = hexColor.substr(3, 2);
-        const string blueStr = hexColor.substr(5, 2);
-
-        auto redLong = strtol(redStr.c_str(), nullptr, 16);
-        auto greenLong = strtol(greenStr.c_str(), nullptr, 16);
-        auto blueLong = strtol(blueStr.c_str(), nullptr, 16);
-
-        const constexpr uint16 colorScaleFactor = 257; // 65535 / 255
-
-        uint16 red = static_cast<uint16>(redLong * colorScaleFactor);
-        uint16 green = static_cast<uint16>(greenLong * colorScaleFactor);
-        uint16 blue = static_cast<uint16>(blueLong * colorScaleFactor);
-
-        xcb_colormap_t colormap = screen->default_colormap;
-        auto cookie = xcb_alloc_color(connection, colormap, red, green, blue);
-        auto reply = xcb_alloc_color_reply(connection, cookie, nullptr);
-        
-        uint32 pixel = reply->pixel;
-        
-        delete reply;
-
+        const uint32 rgb = stoul(hexColor.substr(1), nullptr, 16);
+    
+        uint16 r = ((rgb >> 16) & 0xFF) * 0x0101;
+        uint16 g = ((rgb >> 8) & 0xFF) * 0x0101;
+        uint16 b = (rgb & 0xFF) * 0x0101;
+    
+        auto cookie = xcb_alloc_color(windowConnection, windowScreen->default_colormap, r, g, b);
+        auto reply = xcb_alloc_color_reply(windowConnection, cookie, nullptr);
+    
+        if (!reply) 
+            return 0;
+    
+        const uint32 pixel = reply->pixel;
+        free(reply);
+    
         return pixel;
     }
 
@@ -73,8 +65,8 @@ namespace Luna
         windowCenterX = windowWidth / 2;
         windowCenterY = windowHeight / 2;
 
-        windowPosX = (screen->width_in_pixels - windowWidth) / 2;
-        windowPosY = (screen->height_in_pixels - windowHeight) / 2;
+        windowPosX = (windowScreen->width_in_pixels - windowWidth) / 2;
+        windowPosY = (windowScreen->height_in_pixels - windowHeight) / 2;
     }
 
     void Window::Close() noexcept
@@ -82,33 +74,31 @@ namespace Luna
         xcb_client_message_event_t event{};
         event.response_type = XCB_CLIENT_MESSAGE;
         event.format = 32;
-        event.window = window;
+        event.window = windowHandle;
         event.type = wmProtocols;
         event.data.data32[0] = wmDeleteWindow;
         event.data.data32[1] = XCB_CURRENT_TIME;
 
         xcb_send_event(
-            connection, 
+            windowConnection, 
             false, 
-            window, 
+            windowHandle, 
             XCB_EVENT_MASK_NO_EVENT, 
             reinterpret_cast<const char*>(&event)
         );
-        xcb_flush(connection); 
+        xcb_flush(windowConnection); 
     }
 
     static xcb_atom_t GetAtom(xcb_connection_t* connection, const string_view atom)
     {
         auto cookie = xcb_intern_atom(connection, 0, atom.size(), atom.data());
         auto atomReply = xcb_intern_atom_reply(connection, cookie, nullptr);
-        xcb_atom_t result = atomReply->atom;
-
+        const xcb_atom_t result = atomReply->atom;
         delete atomReply;
-        
         return result;
     }
 
-    static bool LoadPNG(const string_view filename, unsigned char ** imageData, int32 & width, int32 & height)
+    static bool LoadPNG(const string_view filename, uint8 ** imageData, int32 & width, int32 & height)
     {
         FILE *fp = fopen(filename.data(), "rb");
         if (!fp)
@@ -159,9 +149,9 @@ namespace Luna
         png_set_expand(png);
         png_read_update_info(png, info);
     
-        *imageData = new unsigned char[png_get_rowbytes(png, info) * height];
+        *imageData = new uint8[png_get_rowbytes(png, info) * height];
         png_bytep* rowPointers = new png_bytep[height];
-        for (int y = 0; y < height; ++y)
+        for (size_t y = 0; y < height; ++y)
             rowPointers[y] = *imageData + y * png_get_rowbytes(png, info);
     
         png_read_image(png, rowPointers);
@@ -172,37 +162,36 @@ namespace Luna
         return true;
     }
 
-    void SetIcon(Display * display, xcb_connection_t* connection, xcb_window_t window, const string_view filename) 
+    static void SetIcon(Display * display, xcb_connection_t* connection, xcb_window_t window, const string_view filename) 
     {
-        int width, height;
-        unsigned char * dataImage;
+        int32 width, height;
+        uint8 * dataImage = nullptr;
         LoadPNG(filename.data(), &dataImage, width, height);
     
-        int longCount = 2 + width * height;
-    
-        unsigned long* icon = new unsigned long[longCount];
-        unsigned long* target = icon;
+        int32 longCount = 2 + width * height;
+        uint64 * icon = new uint64[longCount];
+        uint64 * target = icon;
     
         *target++ = width;
         *target++ = height;
-    
-        for (int i = 0; i < width * height; ++i) 
+
+        for (size_t i = 0; i < width * height; ++i) 
         {
             *target++ = 
-                (dataImage[i * 4 + 2]) |
-                (dataImage[i * 4 + 1] << 8) |
-                (dataImage[i * 4 + 0] << 16) |
-                (dataImage[i * 4 + 3] << 24);
+            (dataImage[i * 4 + 2]) |
+            (dataImage[i * 4 + 1] << 8) |
+            (dataImage[i * 4 + 0] << 16) |
+            (dataImage[i * 4 + 3] << 24);
         }
         
         /*
         // I don't know the why xcb_change_property doesn't work here!
-        auto netWmIcon = GetAtom(connection, "_NET_WM_ICON");
+        xcb_atom_t _NET_WM_ICON = GetAtom(connection, "_NET_WM_ICON");
         xcb_change_property(
             connection, 
             XCB_PROP_MODE_REPLACE, 
             window,
-            netWmIcon,
+            _NET_WM_ICON,
             XCB_ATOM_CARDINAL, 
             32,
             longCount, 
@@ -210,15 +199,15 @@ namespace Luna
         );
         */
 
-        auto netWmIcon = XInternAtom(display, "_NET_WM_ICON", false);
+        auto _NET_WM_ICON = XInternAtom(display, "_NET_WM_ICON", false);
         XChangeProperty(
             display, 
             window,
-            netWmIcon,
+            _NET_WM_ICON,
             XCB_ATOM_CARDINAL, 
             32,
             XCB_PROP_MODE_REPLACE,
-            (unsigned char*) icon,
+            reinterpret_cast<uint8*>(icon),
             longCount
         );
         
@@ -229,18 +218,18 @@ namespace Luna
 
     static void Fullscreen(xcb_connection_t* connection, xcb_window_t window)
     {
-        xcb_atom_t netWmState = GetAtom(connection, "_NET_WM_STATE");
-        xcb_atom_t netWmStateFullscreen = GetAtom(connection, "_NET_WM_STATE_FULLSCREEN");
+        xcb_atom_t _NET_WM_STATE = GetAtom(connection, "_NET_WM_STATE");
+        xcb_atom_t _NET_WM_STATE_FULLSCREEN = GetAtom(connection, "_NET_WM_STATE_FULLSCREEN");
     
         xcb_change_property(
             connection, 
             XCB_PROP_MODE_REPLACE, 
             window,
-            netWmState, 
+            _NET_WM_STATE, 
             XCB_ATOM_ATOM, 
             32, 
             1, 
-            &netWmStateFullscreen
+            &_NET_WM_STATE_FULLSCREEN
         );
     }
 
@@ -257,13 +246,13 @@ namespace Luna
 
         hints.flags = 2;
 
-        xcb_atom_t motifWmHints = GetAtom(connection, "_MOTIF_WM_HINTS");
+        xcb_atom_t _MOTIF_WM_HINTS = GetAtom(connection, "_MOTIF_WM_HINTS");
         xcb_change_property(
             connection,
             XCB_PROP_MODE_REPLACE,
             window,
-            motifWmHints,
-            motifWmHints,
+            _MOTIF_WM_HINTS,
+            _MOTIF_WM_HINTS,
             32,
             5,
             &hints
@@ -278,38 +267,38 @@ namespace Luna
             Fullscreen(connection, window);
 
         auto pid = getpid();
-        xcb_atom_t newWmPid = GetAtom(connection, "_NET_WM_PID");
+        xcb_atom_t _NET_WM_PID = GetAtom(connection, "_NET_WM_PID");
         xcb_change_property(
             connection, 
             XCB_PROP_MODE_REPLACE, 
             window,
-            newWmPid, 
+            _NET_WM_PID, 
             XCB_ATOM_CARDINAL, 
             32, 
             1,
             &pid
         );
 
-        Atom newWmWindowType = GetAtom(connection, "_NET_WM_WINDOW_TYPE");
-        Atom newWmWindowTypeNormal = GetAtom(connection, "_NET_WM_WINDOW_TYPE_NORMAL");
+        xcb_atom_t _NET_WM_WINDOW_TYPE = GetAtom(connection, "_NET_WM_WINDOW_TYPE");
+        xcb_atom_t _NET_WM_WINDOW_TYPE_NORMAL = GetAtom(connection, "_NET_WM_WINDOW_TYPE_NORMAL");
         xcb_change_property(
             connection, 
             XCB_PROP_MODE_REPLACE, 
             window,
-            newWmWindowType, 
+            _NET_WM_WINDOW_TYPE, 
             XCB_ATOM_CARDINAL, 
             32, 
             1, 
-            &newWmWindowTypeNormal
+            &_NET_WM_WINDOW_TYPE_NORMAL
         );
 
-        long compositor = 1;
-        Atom newWmBypassCompositor = GetAtom(connection, "_NET_WM_BYPASS_COMPOSITOR");
+        uint64 compositor = 1;
+        xcb_atom_t _NET_WM_BYPASS_COMPOSITOR = GetAtom(connection, "_NET_WM_BYPASS_COMPOSITOR");
         xcb_change_property(
             connection, 
             XCB_PROP_MODE_REPLACE, 
             window, 
-            newWmBypassCompositor,
+            _NET_WM_BYPASS_COMPOSITOR,
             XCB_ATOM_CARDINAL, 
             32, 
             1, 
@@ -319,10 +308,8 @@ namespace Luna
 
     bool Window::Create() noexcept
     {
-        if(xcb_connection_has_error(connection))
+        if(xcb_connection_has_error(windowConnection))
             return false;
-
-        uint32 mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
 
         xcb_create_window_value_list_t attributes{};
         attributes.background_pixel = windowColor;
@@ -336,11 +323,16 @@ namespace Luna
             | XCB_EVENT_MASK_KEY_RELEASE    
             | XCB_EVENT_MASK_FOCUS_CHANGE;
 
+        const uint32 mask = XCB_CW_BACK_PIXEL 
+            | XCB_CW_EVENT_MASK 
+            | XCB_CW_COLORMAP 
+            | XCB_CW_CURSOR;
+        
         xcb_create_window_aux(
-            connection,
+            windowConnection,
             XCB_COPY_FROM_PARENT,
-            window,
-            screen->root,
+            windowHandle,
+            windowScreen->root,
             static_cast<int16>(windowPosX), static_cast<int16>(windowPosY),
             static_cast<uint16>(windowWidth), static_cast<uint16>(windowHeight),
             0,
@@ -350,12 +342,12 @@ namespace Luna
             &attributes
         );
 
-        if(!window)
+        if(!windowHandle)
             return false;
 
         xcb_icccm_set_wm_name(
-            connection,
-            window, 
+            windowConnection,
+            windowHandle, 
             XCB_ATOM_STRING, 
             8,
             windowTitle.size(), 
@@ -365,32 +357,30 @@ namespace Luna
         xcb_size_hints_t sizeHints{};
         xcb_icccm_size_hints_set_min_size(&sizeHints, windowWidth, windowHeight);
         xcb_icccm_size_hints_set_max_size(&sizeHints, windowWidth, windowHeight);
-        xcb_icccm_set_wm_size_hints(connection, window, XCB_ATOM_WM_NORMAL_HINTS, &sizeHints);
+        xcb_icccm_set_wm_size_hints(windowConnection, windowHandle, XCB_ATOM_WM_NORMAL_HINTS, &sizeHints);
 
-        wmDeleteWindow = GetAtom(connection, "WM_DELETE_WINDOW");
-        wmProtocols = GetAtom(connection, "WM_PROTOCOLS");
+        wmDeleteWindow = GetAtom(windowConnection, "WM_DELETE_WINDOW");
+        wmProtocols = GetAtom(windowConnection, "WM_PROTOCOLS");
+        xcb_icccm_set_wm_protocols(windowConnection, windowHandle, wmProtocols, 1, &wmDeleteWindow);
+
+        SetAtoms(windowConnection, windowHandle, windowMode);
         
-        xcb_icccm_set_wm_protocols(connection, window, wmProtocols, 1, &wmDeleteWindow);
-
-        SetAtoms(connection, window, windowMode);
-        
-        XDefineCursor(display, window, windowCursor);
-
+        XDefineCursor(windowDisplay, windowHandle, windowCursor);
         if(!windowIcon.empty())
-            SetIcon(display, connection, window, windowIcon);
+            SetIcon(windowDisplay, windowConnection, windowHandle, windowIcon);
         
-        xcb_map_window (connection, window);
+        xcb_map_window (windowConnection, windowHandle);
         
-        uint32 valueMask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y;
-        int32 coord[] = { windowPosX, windowPosY };
-        xcb_configure_window(connection, window, valueMask, coord);
+        const uint32 valueMask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y;
+        const int32 coord[] = { windowPosX, windowPosY };
+        xcb_configure_window(windowConnection, windowHandle, valueMask, coord);
 
-        xcb_flush(connection);
+        xcb_flush(windowConnection);
 
         return true;
     }
 
-    void Window::WinProc(xcb_generic_event_t * event)
+    void Window::WinProc(const xcb_generic_event_t * const event)
     {
         switch(event->response_type & 0x7f)
         {

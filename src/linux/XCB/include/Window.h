@@ -4,7 +4,6 @@
 #include "Export.h"
 #include <xcb/xcb.h>
 #include <xcb/xfixes.h>
-#include <X11/Xlib-xcb.h>
 #include <X11/Xcursor/Xcursor.h>
 
 namespace Luna
@@ -14,10 +13,10 @@ namespace Luna
     class DLL Window
     {
     private:
-        Display*          display;
-        xcb_connection_t* connection;
-        xcb_window_t      window;
-        xcb_screen_t*     screen;
+        Display*          windowDisplay;
+        xcb_connection_t* windowConnection;
+        xcb_window_t      windowHandle;
+        xcb_screen_t*     windowScreen;
         int32		      windowWidth;
         int32		      windowHeight;
         string            windowIcon;
@@ -30,13 +29,13 @@ namespace Luna
         int32		      windowCenterX;
         int32		      windowCenterY;
 
-        xcb_atom_t wmDeleteWindow;
-        xcb_atom_t wmProtocols;
+        xcb_atom_t        wmDeleteWindow;
+        xcb_atom_t        wmProtocols;
 
         static void (*inFocus)();
         static void (*lostFocus)();
 
-        uint32 GetColor(const string hexColor) noexcept;
+        uint32 GetColor(const string && hexColor) noexcept;
         
     public:
         explicit Window() noexcept;
@@ -59,7 +58,7 @@ namespace Luna
         void Title(const string_view title) noexcept;
         void Size(const uint32 width, const uint32 height) noexcept;
         void Mode(const uint32 mode) noexcept;
-        void Color(const string_view hex) noexcept;
+        void Color(const string_view color) noexcept;
 
         void HideCursor(const bool hide) const noexcept;
         void Close() noexcept;
@@ -68,14 +67,14 @@ namespace Luna
         void InFocus(void(*func)()) noexcept;
         void LostFocus(void(*func)()) noexcept;
 
-        static void WinProc(xcb_generic_event_t * event);
+        static void WinProc(const xcb_generic_event_t * const event);
     };
 
     inline xcb_connection_t* Window::Connection() const noexcept
-    { return connection; }
+    { return windowConnection; }
 
     inline xcb_window_t Window::Id() const noexcept
-    { return window; }
+    { return windowHandle; }
         
     inline xcb_atom_t Window::WMDeleteWindow() const noexcept
     { return wmDeleteWindow; }
@@ -108,7 +107,7 @@ namespace Luna
     { windowIcon = filename; }
 
     inline void Window::Cursor(const string_view filename) noexcept
-    { windowCursor = XcursorFilenameLoadCursor(display, filename.data()); }
+    { windowCursor = XcursorFilenameLoadCursor(windowDisplay, filename.data()); }
 
     inline void Window::Title(const string_view title) noexcept
     { windowTitle = title; }
@@ -116,11 +115,11 @@ namespace Luna
     inline void Window::Mode(const uint32 mode) noexcept
     { windowMode = mode; }
 
-    inline void Window::Color(const string_view hex) noexcept
-    { windowColor = GetColor(hex.data()); }
+    inline void Window::Color(const string_view color) noexcept
+    { windowColor = GetColor(color.data()); }
     
     inline void Window::HideCursor(const bool hide) const noexcept
-    { hide ? xcb_xfixes_hide_cursor(connection, window) : xcb_xfixes_show_cursor(connection, window); }
+    { hide ? xcb_xfixes_hide_cursor(windowConnection, windowHandle) : xcb_xfixes_show_cursor(windowConnection, windowHandle); }
 
     inline void Window::InFocus(void(*func)()) noexcept
     { inFocus = func; }

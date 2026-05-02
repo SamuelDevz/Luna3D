@@ -54,14 +54,16 @@ namespace Luna
             string title = format("{}    FPS: {}    Frame Time: {:.3f} (ms)",
                 window->Title().c_str(), frameCount, frameTime * 1000).c_str();
 
-            xcb_change_property(window->Connection(),
+            xcb_change_property(
+                window->Connection(),
                 XCB_PROP_MODE_REPLACE,
                 window->Id(),
                 XCB_ATOM_WM_NAME,
                 XCB_ATOM_STRING,
                 8,
                 title.size(),
-                title.c_str());
+                title.c_str()
+            );
 
             xcb_flush(window->Connection());
 
@@ -73,12 +75,10 @@ namespace Luna
         return frameTime;
     }
 
-    bool Quit(xcb_generic_event_t *event, xcb_atom_t wmDeleteWindow)
+    static bool Quit(xcb_generic_event_t *event, xcb_atom_t wmDeleteWindow)
     {
         auto message = reinterpret_cast<xcb_client_message_event_t*>(event);
-        if(message->data.data32[0] == wmDeleteWindow)
-            return true;
-        return false;
+        return (message->data.data32[0] == wmDeleteWindow) ? true : false;
     }
 
     int32 Engine::Loop()
@@ -122,7 +122,7 @@ namespace Luna
         return 0;
     }
 
-    void Engine::EngineProc(xcb_generic_event_t * event)
+    void Engine::EngineProc(xcb_generic_event_t * const event)
     {
         if (event->response_type == XCB_EXPOSE)
             game->Display();
