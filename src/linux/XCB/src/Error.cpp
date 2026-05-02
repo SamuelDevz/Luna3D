@@ -33,14 +33,18 @@ namespace Luna
     Error::~Error() noexcept
     {
         xcb_errors_context_free(context);
-        if(error) delete error;
+        if(error) 
+            delete error;
     }
 
     string Error::ToString() const
     {
-        const char * errorName = xcb_errors_get_name_for_error(context, error->error_code, nullptr);
-        string buffer = format("Captured XCB error: {}\nMajor code: {}\nMinor code: {}",
-            errorName ? errorName : "Unknow", error->error_code,
+        const string_view errorName = xcb_errors_get_name_for_error(context, error->error_code, nullptr);
+        string buffer = format(
+            "Captured XCB error: {}\n"
+            "Major code: {}\n"
+            "Minor code: {}\n",
+            errorName.empty() ? "Unknow" : errorName, 
             xcb_errors_get_name_for_major_code(context, error->major_code),
             xcb_errors_get_name_for_minor_code(context, error->major_code, error->minor_code)
         );
