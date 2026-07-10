@@ -8,6 +8,7 @@ option(BUILD_EXAMPLES "Build examples programs" OFF)
 option(SHARED_LIBRARIES "Use the shared libs" OFF)
 option(BUILD_DIRECT3D11 "Build the engine using Direct3D 11." OFF)
 option(BUILD_DIRECT3D12 "Build the engine using Direct3D 12." OFF)
+option(BUILD_VULKAN "Build the engine using Vulkan." OFF)
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug)
