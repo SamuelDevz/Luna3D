@@ -5,6 +5,8 @@
 #include "KeyCodes.h"
 #include "Error.h"
 #include "Timer.h"
+#include "Sound.h"
+#include "Audio.h"
 #include "Window.h"
 #include "Input.h"
 #include "Logger.h"

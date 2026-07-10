@@ -1,4 +1,6 @@
-set(SOURCE_FILES src/Timer.cpp
+set(SOURCE_FILES src/Sound.cpp
+    src/Audio.cpp
+    src/Timer.cpp
     src/Input.cpp
     src/Game.cpp
     src/Engine.cpp)
