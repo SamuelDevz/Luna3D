@@ -1,2 +1,3 @@
 add_subdirectory(simplewindow)
+add_subdirectory(soundcontrol)
 add_subdirectory(hellotriangle)
