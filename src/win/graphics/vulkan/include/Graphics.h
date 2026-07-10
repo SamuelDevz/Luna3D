@@ -1,8 +1,9 @@
 #pragma once
 
+#include "Types.h"
 #include "Export.h"
 #include "Window.h"
-#include "Types.h"
+#include "Logger.h"
 #include <vulkan/vulkan.h>
 
 namespace Luna
@@ -15,6 +16,8 @@ namespace Luna
         VkPhysicalDevice             physicalDevice;
 
     public:
+        static Logger logger;
+
         explicit Graphics() noexcept;
         ~Graphics() noexcept;
 
