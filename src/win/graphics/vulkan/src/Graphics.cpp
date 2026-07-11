@@ -19,7 +19,11 @@ namespace Luna
 
     Graphics::~Graphics() noexcept
     {
+        vkDeviceWaitIdle(device);
+        vkDestroyDevice(device, nullptr);
+
         delete validationLayer;
+
         vkDestroyInstance(instance, nullptr);
     }
 
@@ -271,5 +275,58 @@ namespace Luna
     #ifdef _DEBUG
         LogHardwareInfo();
     #endif
+
+        // ---------------------------------------------------
+        // Queue Family
+        // ---------------------------------------------------
+
+        uint32 queueFamilyCount{};
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+
+        vector<VkQueueFamilyProperties> queueProperties(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueProperties.data());
+
+        bool found = false;
+        uint32 queueFamilyIndex{};
+        for (size_t i = 0; i < queueFamilyCount && !found; ++i)
+        {
+            if (queueProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                queueFamilyIndex = i;
+                found = true;
+            }
+        }
+
+        VkThrowIfError(VK_ERROR_FEATURE_NOT_PRESENT, !found)
+
+        float queuePriorities { 1.0f };
+        VkDeviceQueueCreateInfo queueInfo{};
+        queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueInfo.pNext = nullptr;
+        queueInfo.queueCount = 1;
+        queueInfo.pQueuePriorities = &queuePriorities;
+        queueInfo.queueFamilyIndex = queueFamilyIndex;
+
+        // ---------------------------------------------------
+        // Logical Device
+        // ---------------------------------------------------
+
+        constexpr const char* deviceExtensions[]
+        {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        };
+
+        VkDeviceCreateInfo deviceInfo{};
+        deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        deviceInfo.pNext = nullptr;
+        deviceInfo.queueCreateInfoCount = 1;
+        deviceInfo.pQueueCreateInfos = &queueInfo;
+        deviceInfo.enabledExtensionCount = Countof(deviceExtensions);
+        deviceInfo.ppEnabledExtensionNames = deviceExtensions;
+        deviceInfo.enabledLayerCount = 0;
+        deviceInfo.ppEnabledLayerNames = nullptr;
+        deviceInfo.pEnabledFeatures = nullptr;
+
+        VkThrowIfFailed(vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device));
     }
 }
