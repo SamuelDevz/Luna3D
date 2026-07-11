@@ -611,6 +611,72 @@ namespace Luna
         bgColor.float32[3] = 1.0f;
     }
 
+    void Graphics::Clear()
+    {
+        vkWaitForFences(device, 1, &fence, true, UINT64_MAX);
+        vkResetFences(device, 1, &fence);
+
+        VkThrowIfFailed(vkAcquireNextImageKHR(
+            device,
+            swapchain,
+            UINT64_MAX,
+            imageAvailableSemaphore,
+            nullptr,
+            &backBufferIndex
+        ));
+
+        VkThrowIfFailed(vkResetCommandBuffer(commandBuffer, 0));
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+        VkThrowIfFailed(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissorRect);  
+
+        VkClearValue clearValue{};
+        clearValue.color = bgColor;
+
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = renderPass;
+        renderPassInfo.framebuffer = buffers[backBufferIndex].framebuffer;
+        renderPassInfo.renderArea = scissorRect;
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = &clearValue;
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    }
+
+    void Graphics::Present()
+    {
+        const VkPipelineStageFlags waitStages[]
+        { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &renderFinishedSemaphore;
+
+        VkThrowIfFailed(vkQueueSubmit(queue, 1, &submitInfo, fence));
+
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = &renderFinishedSemaphore;
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = &swapchain;
+        presentInfo.pImageIndices = &backBufferIndex;
+
+        VkThrowIfFailed(vkQueuePresentKHR(queue, &presentInfo));
+    }
+
     static uint32 FindMemoryType(const VkPhysicalDevice physicalDevice, 
         const uint32 typeFilter, 
         const VkMemoryPropertyFlags properties)
