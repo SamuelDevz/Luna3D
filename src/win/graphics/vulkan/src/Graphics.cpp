@@ -24,7 +24,11 @@ namespace Luna
         backBufferIndex{},
         commandPool{nullptr},
         commandBuffer{nullptr},
-        renderPass{nullptr}
+        renderPass{nullptr},
+        queue{nullptr},
+        imageAvailableSemaphore{nullptr},
+        renderFinishedSemaphore{nullptr},
+        fence{nullptr}
     {
         validationLayer = new ValidationLayer();
     }
@@ -32,6 +36,10 @@ namespace Luna
     Graphics::~Graphics() noexcept
     {
         vkDeviceWaitIdle(device);
+
+        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+        vkDestroyFence(device, fence, nullptr);
 
         vkDestroyRenderPass(device, renderPass, nullptr);
 
@@ -495,7 +503,7 @@ namespace Luna
         commandBufferAllocateInfo.commandBufferCount = 1;
 
         VkThrowIfFailed(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &commandBuffer));
-        
+
         // ---------------------------------------------------
         // Renderpass
         // ---------------------------------------------------
@@ -556,5 +564,23 @@ namespace Luna
 
             VkThrowIfFailed(vkCreateFramebuffer(device, &framebufferCreateInfo, nullptr, &buffers[i].framebuffer));
         }
+
+        // ---------------------------------------------------
+        // Fence, Semaphores and Queue
+        // ---------------------------------------------------
+
+        VkFenceCreateInfo fenceInfo{};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        VkThrowIfFailed(vkCreateFence(device, &fenceInfo, nullptr, &fence));
+
+        VkSemaphoreCreateInfo semaphoreCreateInfo{};
+        semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        VkThrowIfFailed(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &imageAvailableSemaphore));
+        VkThrowIfFailed(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphore));
+
+        vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue);
     }
 }
