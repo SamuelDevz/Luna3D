@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Types.h"
+#include "Export.h"
 #include "WinInclude.h"
 #include <windows.h>
 
@@ -16,7 +17,7 @@ namespace Luna
         LOG_LEVEL_TRACE
     };
 
-    class Logger
+    class DLL Logger
     {
     private:
         HANDLE outputHandle;
