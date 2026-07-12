@@ -1,5 +1,5 @@
-set(SOURCE_FILES src/VkError.cpp
-    src/Mesh.cpp
+set(SOURCE_FILES src/Mesh.cpp
+    src/VkError.cpp
     src/Logger.cpp
     src/ValidationLayer.cpp
     src/Graphics.cpp)

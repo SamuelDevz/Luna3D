@@ -4,7 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <filesystem>
-#include <iostream>
+using std::ios;
 
 namespace Luna
 {
@@ -40,15 +40,14 @@ namespace Luna
     static VkShaderModule CreateShaderModule(VkDevice device, const string_view filename)
     {
         const fs::path shaderPath = GetShaderPath(filename);
-        std::ifstream file(shaderPath, std::ios::ate | std::ios::binary);
+        std::ifstream file(shaderPath.c_str(), ios::ate | ios::binary);
 
         if (!file.is_open() || file.tellg() <= 0)
-            VkThrowIfFailure(VK_ERROR_INITIALIZATION_FAILED, 
-                "Shader not found or empty: " + shaderPath.string());
+            VkThrowIfFailure(VK_ERROR_INITIALIZATION_FAILED, "Shader not found or empty: " + shaderPath.string());
 
         const auto size = file.tellg();
         std::vector<char> fileBytes(static_cast<size_t>(size));
-        file.seekg(0, std::ios::beg);
+        file.seekg(0, ios::beg);
         file.read(fileBytes.data(), size);
         file.close();
 
@@ -123,7 +122,7 @@ namespace Luna
         vertexInputAttributeDescription[1].binding = 0;
         vertexInputAttributeDescription[1].location = 1;
         vertexInputAttributeDescription[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        vertexInputAttributeDescription[1].offset = offsetof(Vertex, color);
+        vertexInputAttributeDescription[1].offset = sizeof(float) * geometry->vertexCount;
 
         VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo{};
         vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

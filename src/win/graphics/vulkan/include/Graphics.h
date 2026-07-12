@@ -2,8 +2,8 @@
 
 #include "Types.h"
 #include "Export.h"
-#include "Logger.h"
 #include "Window.h"
+#include "Logger.h"
 #include "ValidationLayer.h"
 #include <vulkan/vulkan.h>
 
@@ -34,9 +34,8 @@ namespace Luna
         SwapchainBuffer            * buffers;
         uint32                       backBufferIndex;
 
-        VkCommandBuffer              commandBuffer;
-        VkCommandBuffer              copyCommandBuffer;
         VkCommandPool                commandPool;
+        VkCommandBuffer              commandBuffer;
 
         VkRenderPass                 renderPass;
 
@@ -48,11 +47,11 @@ namespace Luna
 
         void LogHardwareInfo() const;
 
-        ValidationLayer * validationlayer;
-        
+        ValidationLayer * validationLayer;
+
     public:
         static Logger logger;
-        
+
         VkViewport                   viewport;
         VkRect2D                     scissorRect;
 
@@ -63,7 +62,7 @@ namespace Luna
         void Initialize(const Window * const window);
         void Clear();
         void Present();
-
+        
         void Allocate(const VkDeviceSize size,
             const uint32 typeFilter,
             VkMemoryPropertyFlags properties,
@@ -82,7 +81,7 @@ namespace Luna
         void Copy(VkBuffer destination, 
             const VkBuffer source, 
             const VkDeviceSize size);
-
+                
         VkPhysicalDevice PhysicalDevice() const noexcept;
         VkDevice Device() const noexcept;
         VkCommandBuffer CommandBuffer() const noexcept;

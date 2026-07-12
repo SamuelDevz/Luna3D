@@ -14,15 +14,14 @@ namespace Luna
     struct Mesh
     {
         string id;
+        StagingBuffer vertexUploadBuffer;
 
-        int32 vertexCount;
         uint32 vertexBufferSize;
         VkBuffer vertexBuffer;
         VkDeviceMemory vertexBufferMemory;
-
-        StagingBuffer vertexUploadBuffer;
-
 	    VkDevice device;
+
+		int32 vertexCount;
 
         Mesh(const string_view name) noexcept;
         ~Mesh() noexcept;

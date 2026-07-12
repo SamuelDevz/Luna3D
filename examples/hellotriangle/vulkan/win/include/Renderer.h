@@ -14,7 +14,7 @@ namespace Luna
         Position position;
         Color color;
     };
-    
+
     class Renderer final
     {
     private:

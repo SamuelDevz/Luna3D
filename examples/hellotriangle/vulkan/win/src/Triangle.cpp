@@ -23,7 +23,7 @@ namespace Luna
         graphics->Clear();
 
         vkCmdBindPipeline(graphics->CommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer->Pipeline());
-        
+
         VkDeviceSize offset{};
         vkCmdBindVertexBuffers(graphics->CommandBuffer(), 0, 1, &geometry->vertexBuffer, &offset);
 
@@ -53,7 +53,7 @@ namespace Luna
         geometry->vertexCount = Countof(vertices);
         geometry->vertexBufferSize = sizeof(Vertex) * geometry->vertexCount;
         geometry->device = graphics->Device();
-		
+
         graphics->Allocate(
             geometry->vertexBufferSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,

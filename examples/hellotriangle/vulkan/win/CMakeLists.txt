@@ -2,7 +2,7 @@ set(SOURCE_FILES src/Renderer.cpp
     src/Triangle.cpp
     src/main.cpp)
 
-set(RESOURCE_FILES resources/Resources.h 
+set(RESOURCE_FILES resources/Resources.h
     resources/Resource.rc)
 
 set(SHADER_FILES resources/Shaders/Vertex.vert

@@ -1,5 +1,6 @@
 #include "Triangle.h"
 #include "Resources.h"
+#include "VkError.h"
 
 auto APIENTRY WinMain(_In_ HINSTANCE hInstance, 
     _In_opt_ HINSTANCE hPrevInstance, 
@@ -16,7 +17,7 @@ auto APIENTRY WinMain(_In_ HINSTANCE hInstance,
         engine->window->Mode(WINDOWED);
         engine->window->Size(800, 600);
         engine->window->Color(0, 122, 204);
-        engine->window->Title("Window Game");
+        engine->window->Title("Triangle");
         engine->window->Icon(IDI_ICON);
         engine->window->Cursor(IDC_CURSOR);
         engine->window->LostFocus(Engine::Pause);
@@ -28,9 +29,9 @@ auto APIENTRY WinMain(_In_ HINSTANCE hInstance,
 
         return exit;
     }
-    catch (const Error & e)
+    catch (const VkError & e)
     {
-        MessageBox(nullptr, e.ToString().c_str(), "Window Game", MB_OK);
+        MessageBox(nullptr, e.ToString().c_str(), "Triangle", MB_OK);
         return 0;
     }
 
@@ -40,7 +41,7 @@ auto APIENTRY WinMain(_In_ HINSTANCE hInstance,
     engine->window->Mode(WINDOWED);
     engine->window->Size(800, 600);
     engine->window->Color(0, 122, 204);
-    engine->window->Title("Window Game");
+    engine->window->Title("Triangle");
     engine->window->Icon(IDI_ICON);
     engine->window->Cursor(IDC_CURSOR);
     engine->window->LostFocus(Engine::Pause);
