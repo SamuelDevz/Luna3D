@@ -9,27 +9,22 @@ using std::format;
 
 namespace Luna
 {
-    enum ForeGroundColors
+    enum ForegroundColor : WORD
     {
-        BLUE = 1,
-        GREEN = 2,
-        RED = 4,
-        YELLOW = 6,
-        WHITE = 7,
-        GRAY = 8
+        COLOR_BLUE   = FOREGROUND_BLUE,
+        COLOR_GREEN  = FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+        COLOR_RED    = FOREGROUND_RED | FOREGROUND_INTENSITY,
+        COLOR_YELLOW = FOREGROUND_RED | FOREGROUND_GREEN,
+        COLOR_WHITE  = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
+        COLOR_GRAY   = FOREGROUND_INTENSITY
     };
-
-    enum BackGroundColors
-    {
-        DARK_RED = 64
-    };
-
+    
     Logger::Logger() noexcept
     {
         AllocConsole();
         AttachConsole(GetCurrentProcessId());
         outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-        errorHandle = GetStdHandle(STD_ERROR_HANDLE);
+        errorHandle  = GetStdHandle(STD_ERROR_HANDLE);
     }
 
     Logger::~Logger() noexcept
@@ -37,92 +32,92 @@ namespace Luna
         FreeConsole();
     }
 
-    void SetTextAttribute(HANDLE handle, const LogLevel level)
+    void Logger::ApplyLevelColor(HANDLE handle, const LogLevel level) noexcept
     {
-        // FATAL, ERROR, WARN, INFO, DEBUG, TRACE
-        static uint8 LOG_LEVEL_COLORS[6]
+        enum BackgroundColor : WORD
         {
-            BackGroundColors::DARK_RED,
-            ForeGroundColors::RED,
-            ForeGroundColors::YELLOW,
-            ForeGroundColors::GREEN,
-            ForeGroundColors::BLUE,
-            ForeGroundColors::GRAY
+            COLOR_BG_DARK_RED = BACKGROUND_RED
         };
+        
+        const constexpr WORD LOG_LEVEL_COLORS[]
+        {
+            COLOR_BG_DARK_RED,
+            COLOR_RED,
+            COLOR_YELLOW,
+            COLOR_GREEN,
+            COLOR_BLUE,
+            COLOR_GRAY
+        };
+
         SetConsoleTextAttribute(handle, LOG_LEVEL_COLORS[level]);
     }
 
-    void Logger::WriteToConsole(const LogLevel level, const string_view message) noexcept
+    void Logger::ResetColor(HANDLE handle) noexcept
     {
-        SetTextAttribute(outputHandle, level);
-        OutputDebugStringA(message.data());
-        WriteConsoleA(outputHandle, message.data(), message.size(), nullptr, nullptr);
+        SetConsoleTextAttribute(handle, COLOR_WHITE);
     }
 
-    void Logger::WriteToConsole(const LogLevel level, const wstring_view message) noexcept
+    void Logger::ResetColors() noexcept
     {
-        SetTextAttribute(outputHandle, level);
-        OutputDebugStringW(message.data());
-        WriteConsoleW(outputHandle, message.data(), message.size(), nullptr, nullptr);
+        ResetColor(outputHandle);
+        ResetColor(errorHandle);
     }
 
-    void Logger::WriteToConsoleError(const LogLevel level, const string_view message) noexcept
+    void Logger::WriteToConsole(HANDLE handle, const LogLevel level, const string_view message) noexcept
     {
-        SetTextAttribute(errorHandle, level);
-        OutputDebugStringA(message.data());
-        WriteConsoleA(outputHandle, message.data(), message.size(), nullptr, nullptr);
+        ApplyLevelColor(handle, level);
+
+        const string owned(message);
+        OutputDebugStringA(owned.c_str());
+        WriteConsoleA(handle, message.data(), static_cast<DWORD>(message.size()), nullptr, nullptr);
     }
 
-    void Logger::WriteToConsoleError(const LogLevel level, const wstring_view message) noexcept
+    void Logger::WriteToConsole(HANDLE handle, const LogLevel level, const wstring_view message) noexcept
     {
-        SetTextAttribute(errorHandle, level);
-        OutputDebugStringW(message.data());
-        WriteConsoleW(outputHandle, message.data(), message.size(), nullptr, nullptr);
+        ApplyLevelColor(handle, level);
+
+        const wstring owned(message);
+        OutputDebugStringW(owned.c_str());
+        WriteConsoleW(handle, message.data(), static_cast<DWORD>(message.size()), nullptr, nullptr);
     }
 
     void Logger::OutputDebug(const LogLevel level, const string_view message) noexcept
     {
-        const bool isError = level < LOG_LEVEL_WARN;
-
-        static constexpr const char* LOG_LEVEL_STRINGS[6]
+        constexpr const char* LOG_LEVEL_PREFIX[]
         {
-            "[FATAL]:",
-            "[ERROR]:",
-            "[WARN]:",
-            "[INFO]:",
-            "[DEBUG]:",
-            "[TRACE]:"
+            "[FATAL]: ",
+            "[ERROR]: ",
+            "[WARN]:  ",
+            "[INFO]:  ",
+            "[DEBUG]: ",
+            "[TRACE]: "
         };
 
-        string outputMessage = format("{} {}", LOG_LEVEL_STRINGS[level], message);
+        const bool isError = (level < LOG_LEVEL_WARN);
+        const string output = format("{}{}", LOG_LEVEL_PREFIX[level], message);
 
-        if (isError) WriteToConsoleError(level, outputMessage);
-        else         WriteToConsole(level, outputMessage);
+        WriteToConsole((isError ? errorHandle : outputHandle), level, output);
 
-        SetConsoleTextAttribute(outputHandle, ForeGroundColors::WHITE);
-        SetConsoleTextAttribute(errorHandle, ForeGroundColors::WHITE);
+        ResetColors();
     }
 
     void Logger::OutputDebug(const LogLevel level, const wstring_view message) noexcept
     {
-        const bool isError = level < LOG_LEVEL_WARN;
-
-        static constexpr const wchar_t* LOG_LEVEL_STRINGS_W[6]
+        constexpr const wchar_t* LOG_LEVEL_PREFIX[]
         {
-            L"[FATAL]:",
-            L"[ERROR]:",
-            L"[WARN]:",
-            L"[INFO]:",
-            L"[DEBUG]:",
-            L"[TRACE]:"
+            L"[FATAL]: ",
+            L"[ERROR]: ",
+            L"[WARN]:  ",
+            L"[INFO]:  ",
+            L"[DEBUG]: ",
+            L"[TRACE]: "
         };
 
-        wstring outputMessage = format(L"{} {}", LOG_LEVEL_STRINGS_W[level], message);
+        const bool isError = (level < LOG_LEVEL_WARN);
+        const wstring output = format(L"{}{}", LOG_LEVEL_PREFIX[level], message);
 
-        if (isError) WriteToConsoleError(level, outputMessage);
-        else         WriteToConsole(level, outputMessage);
+        WriteToConsole((isError ? errorHandle : outputHandle), level, output);
 
-        SetConsoleTextAttribute(outputHandle, ForeGroundColors::WHITE);
-        SetConsoleTextAttribute(errorHandle, ForeGroundColors::WHITE);
+        ResetColors();
     }
 }
