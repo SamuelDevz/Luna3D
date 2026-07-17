@@ -1,9 +1,9 @@
 #include "Engine.h"
-#include <X11/Xlib.h>
 
 namespace Luna 
 {
     Window*   Engine::window = nullptr;
+    Input*    Engine::input = nullptr;
     Game*     Engine::game = nullptr;
 
     Engine::Engine() noexcept
@@ -14,6 +14,7 @@ namespace Luna
     Engine::~Engine() noexcept
     {
         delete game;
+        delete input;
         delete window;
     }
 
@@ -22,6 +23,8 @@ namespace Luna
         this->game = game;
 
         window->Create();
+
+        input = new Input();
 
         return Loop();
     }
@@ -38,6 +41,8 @@ namespace Luna
     {
         XEvent event{};
         game->Init();
+
+        input->Initialize(window->XDisplay(), window->Id(), &event);
 
         do
         {
