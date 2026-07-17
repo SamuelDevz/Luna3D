@@ -46,15 +46,19 @@ namespace Luna
 
         do
         {
-            event = xcb_wait_for_event(window->Connection());
-            EngineProc(event);
-            game->Update();
-            game->Draw();
-        } while (!Quit(event, window->WMDeleteWindow()));
-        
-        delete event;
-
-        game->Finalize();
+            while ((event = xcb_poll_for_event(window->Connection())) != nullptr)
+            {
+                if (Quit(event, window->WMDeleteWindow()))
+                {
+                    delete event;
+                    game->Finalize();
+                    return 0;
+                }
+                
+                EngineProc(event);
+                delete event;
+            }            
+        } while (true);
 
         return 0;
     }
