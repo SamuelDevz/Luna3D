@@ -47,6 +47,7 @@ namespace Luna
         do
         {
             XNextEvent(window->XDisplay(), &event);
+            EngineProc(&event);
             game->Update();
             game->Draw();
         } while (!Quit(&event, window->WMDeleteWindow()));
@@ -54,5 +55,13 @@ namespace Luna
         game->Finalize();
 
         return 0;
+    }
+
+    void Engine::EngineProc(XEvent * event)
+    {
+        if (event->type == Expose)
+            game->Display();
+
+        Input::InputProc(event);
     }
 }

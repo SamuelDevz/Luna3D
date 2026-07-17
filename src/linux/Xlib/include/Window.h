@@ -68,6 +68,8 @@ namespace Luna
 
         void InFocus(void(*func)()) noexcept;
         void LostFocus(void(*func)()) noexcept;
+
+        static void WinProc(XEvent * event);
     };
 
     inline Display* Window::XDisplay() const noexcept

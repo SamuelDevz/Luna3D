@@ -21,5 +21,7 @@ namespace Luna
         ~Engine() noexcept;
 
         int32 Start(Game * const game);
+
+        static void EngineProc(XEvent * event);
     };
 }
