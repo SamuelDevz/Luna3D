@@ -12,6 +12,7 @@ namespace Luna
     protected:
         static Window*   & window;
         static Input*    & input;
+        static double    & frameTime;
         
     public:
         explicit Game() noexcept;

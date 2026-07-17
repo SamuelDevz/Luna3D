@@ -2,6 +2,7 @@
 
 #include "Types.h"
 #include "KeyCodes.h"
+#include "Timer.h"
 #include "Error.h"
 #include "MessageBox.h"
 #include "Window.h"
