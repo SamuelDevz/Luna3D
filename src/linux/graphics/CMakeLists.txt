@@ -1,0 +1,7 @@
+if(BUILD_VULKAN)
+    add_subdirectory(vulkan)
+elseif(BUILD_DIRECT3D11 || BUILD_DIRECT3D12)
+    message(FATAL_ERROR "This options only supported in Windows. Options: BUILD_VULKAN")
+else()
+    message(FATAL_ERROR "Please choose a graphics API. Options: BUILD_VULKAN")
+endif()
