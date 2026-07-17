@@ -9,8 +9,8 @@ namespace Luna
     class DLL Game
     {
     protected:
-        static Window * window;
-        static Input* input;
+        static Window*   & window;
+        static Input*    & input;
         
     public:
         explicit Game() noexcept;

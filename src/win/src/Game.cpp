@@ -3,8 +3,8 @@
 
 namespace Luna
 {
-    Window * Game::window = Engine::window;
-    Input * Game::input = Engine::input;
+    Window*   & Game::window    = Engine::window;
+    Input*    & Game::input     = Engine::input;
     
     Game::Game() noexcept
     {
