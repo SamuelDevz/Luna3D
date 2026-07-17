@@ -3,7 +3,9 @@
 #include "Utils.h"
 #include <vulkan/vulkan_win32.h>
 #include <format>
+#include <vector>
 using std::format;
+using std::vector;
 
 namespace Luna
 {
@@ -61,5 +63,16 @@ namespace Luna
     #endif
 
         VkThrowIfFailed(vkCreateInstance(&instanceInfo, nullptr, &instance));
+
+        // ---------------------------------------------------
+        // Physical Device
+        // ---------------------------------------------------
+
+        uint32 gpuCount{};
+        VkThrowIfFailed(vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr));
+
+        vector<VkPhysicalDevice> gpus(gpuCount);
+        VkThrowIfFailed(vkEnumeratePhysicalDevices(instance, &gpuCount, gpus.data()));
+        physicalDevice = gpus[0];
     }
 }
