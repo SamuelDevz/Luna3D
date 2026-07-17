@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <filesystem>
+using std::ios;
 
 namespace Luna
 {
@@ -11,6 +12,7 @@ namespace Luna
 
     Renderer::Renderer() noexcept
         : graphics{nullptr},
+        geometry{nullptr},
         pipeline{nullptr},
         pipelineLayout{nullptr}
     {
@@ -19,10 +21,8 @@ namespace Luna
 
     Renderer::~Renderer()
     {
-        graphics->ResetCommands();
+        vkDeviceWaitIdle(graphics->Device());
 
-        SafeDelete(geometry);
-        
         vkDestroyPipelineLayout(graphics->Device(), pipelineLayout, nullptr);
         vkDestroyPipeline(graphics->Device(), pipeline, nullptr);
     }
@@ -40,17 +40,21 @@ namespace Luna
 
     static VkShaderModule CreateShaderModule(VkDevice device, const string_view filename)
     {
-        fs::path shaderPath = GetShaderPath(filename);
-        std::ifstream file(shaderPath, std::ios::ate | std::ios::binary);
-        
-        std::vector<char> fileBytes(file.tellg());
-        file.seekg(0, std::ios::beg);
-        file.read(fileBytes.data(), fileBytes.size());
+        const fs::path shaderPath = GetShaderPath(filename);
+        std::ifstream file(shaderPath.c_str(), ios::ate | ios::binary);
+
+        if (!file.is_open() || file.tellg() <= 0)
+            VkThrowIfFailure(VK_ERROR_INITIALIZATION_FAILED, "Shader not found or empty: " + shaderPath.string());
+
+        const auto size = file.tellg();
+        std::vector<char> fileBytes(static_cast<size_t>(size));
+        file.seekg(0, ios::beg);
+        file.read(fileBytes.data(), size);
         file.close();
 
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = fileBytes.size();
+        createInfo.codeSize = size;
         createInfo.pCode = reinterpret_cast<uint32*>(fileBytes.data());
 
         VkShaderModule shaderModule;
@@ -59,42 +63,10 @@ namespace Luna
         return shaderModule;
     }
 
-    void Renderer::BuildVertexBuffer(const Vertex* vertices, const uint32 count)
-    {
-        VkDeviceSize vertexBufferSize = sizeof(Vertex) * count;
-
-        geometry->device = graphics->Device();
-        graphics->Allocate(
-            vertexBufferSize,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            &geometry->vertexBufferUpload,
-            &geometry->vertexBufferUploadMemory
-        );
-
-        graphics->Copy(vertices, vertexBufferSize, geometry->vertexBufferUploadMemory);
-
-        graphics->Allocate(
-            vertexBufferSize,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            &geometry->vertexBuffer,
-            &geometry->vertexBufferMemory
-        );
-
-        graphics->Copy(geometry->vertexBuffer, geometry->vertexBufferUpload, vertexBufferSize);
-
-        vkDestroyBuffer(graphics->Device(), geometry->vertexBufferUpload, nullptr);
-        vkFreeMemory(graphics->Device(), geometry->vertexBufferUploadMemory, nullptr);
-        geometry->vertexBufferUpload = nullptr;
-        geometry->vertexBufferUploadMemory = nullptr;
-    }
-
-    void Renderer::Initialize(Graphics* graphics, const Vertex * vertices, const uint32 verticesCount)
+    void Renderer::Initialize(Graphics* graphics, Mesh * geometry)
     {
         this->graphics = graphics;
-
-        BuildVertexBuffer(vertices, verticesCount);
+        this->geometry = geometry;
 
         // -----------------------------------------------------------
         // Pipeline layout
@@ -145,12 +117,13 @@ namespace Luna
         vertexInputAttributeDescription[0].binding = 0;
         vertexInputAttributeDescription[0].location = 0;
         vertexInputAttributeDescription[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+        vertexInputAttributeDescription[0].offset = 0;
 
         // Color
         vertexInputAttributeDescription[1].binding = 0;
         vertexInputAttributeDescription[1].location = 1;
         vertexInputAttributeDescription[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        vertexInputAttributeDescription[1].offset = offsetof(Vertex, color);
+        vertexInputAttributeDescription[1].offset = sizeof(float) * geometry->vertexCount;
 
         VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo{};
         vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -243,13 +216,5 @@ namespace Luna
 
         vkDestroyShaderModule(graphics->Device(), vertexShaderModule, nullptr);
         vkDestroyShaderModule(graphics->Device(), fragmentShaderModule, nullptr);
-    }
-
-    void Renderer::BindDrawResources() noexcept
-    {
-        vkCmdBindPipeline(graphics->CommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-        
-        VkDeviceSize offset{};
-        vkCmdBindVertexBuffers(graphics->CommandBuffer(), 0, 1, &geometry->vertexBuffer, &offset);
     }
 }

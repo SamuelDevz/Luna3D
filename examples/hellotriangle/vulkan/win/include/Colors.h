@@ -147,11 +147,10 @@ namespace glm
         inline constexpr glm::vec4 WhiteSmoke = { 0.960784376f, 0.960784376f, 0.960784376f, 1.f };
         inline constexpr glm::vec4 Yellow = { 1.f, 1.f, 0.f, 1.f };
         inline constexpr glm::vec4 YellowGreen = { 0.603921592f, 0.803921640f, 0.196078449f, 1.f };
-    } // namespace Colors
-    
+    }
+
     namespace ColorsLinear
     {
-        // Standard colors (Red/Green/Blue/Alpha) in linear colorspace
         inline constexpr glm::vec4 AliceBlue = { 0.871367335f, 0.938685894f, 1.f, 1.f };
         inline constexpr glm::vec4 AntiqueWhite = { 0.955973506f, 0.830770075f, 0.679542601f, 1.f };
         inline constexpr glm::vec4 Aqua = { 0.f, 1.f, 1.f, 1.f };
@@ -293,5 +292,5 @@ namespace glm
         inline constexpr glm::vec4 WhiteSmoke = { 0.913098991f, 0.913098991f, 0.913098991f, 1.f };
         inline constexpr glm::vec4 Yellow = { 1.f, 1.f, 0.f, 1.f };
         inline constexpr glm::vec4 YellowGreen = { 0.323143244f, 0.610495746f, 0.031896040f, 1.f };
-    } // namespace ColorsLinear
+    }
 }

@@ -5,10 +5,12 @@ using std::format;
 
 namespace Luna
 {
+    Logger* ValidationLayer::logger = nullptr;
+
     static VkResult CreateDebugUtilsMessengerEXT(
-        VkInstance instance, 
-        const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, 
-        const VkAllocationCallbacks *pAllocator, 
+        VkInstance instance,
+        const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+        const VkAllocationCallbacks *pAllocator,
         VkDebugUtilsMessengerEXT *pDebugMessenger)
     {
         auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(
@@ -29,8 +31,6 @@ namespace Luna
             func(instance, debugMessenger, pAllocator);
     }
 
-    Logger* ValidationLayer::logger = nullptr;
-    
     ValidationLayer::~ValidationLayer() noexcept
     {
         logger->OutputDebug(LOG_LEVEL_DEBUG, "Destroying Vulkan debugger\n");
@@ -46,25 +46,23 @@ namespace Luna
 
         VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo{};
         debugUtilsCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debugUtilsCreateInfo.messageSeverity = 
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+        debugUtilsCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
             | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
             | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        debugUtilsCreateInfo.messageType = 
-            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+        debugUtilsCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
             | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
             | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         debugUtilsCreateInfo.pfnUserCallback = ValidationLayer::DebugCallbackUtils;
-        
+
         VkThrowIfFailed(CreateDebugUtilsMessengerEXT(
-            instance, 
-            &debugUtilsCreateInfo, 
-            nullptr, 
+            instance,
+            &debugUtilsCreateInfo,
+            nullptr,
             &debugUtils));
 
         logger->OutputDebug(LOG_LEVEL_DEBUG, "Vulkan debugger created\n");
     }
-    
+
     VKAPI_ATTR VkBool32 VKAPI_CALL ValidationLayer::DebugCallbackUtils(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -76,18 +74,18 @@ namespace Luna
 
         switch (messageSeverity)
         {
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-                logger->OutputDebug(LOG_LEVEL_ERROR, format("{}\n", pCallbackData->pMessage));
-                break;
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-                logger->OutputDebug(LOG_LEVEL_WARN, format("{}\n", pCallbackData->pMessage));
-                break;
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-                logger->OutputDebug(LOG_LEVEL_INFO, format("{}\n", pCallbackData->pMessage));
-                break;
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-                logger->OutputDebug(LOG_LEVEL_TRACE, format("{}\n", pCallbackData->pMessage));
-                break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+            logger->OutputDebug(LOG_LEVEL_ERROR, format("{}\n", pCallbackData->pMessage));
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+            logger->OutputDebug(LOG_LEVEL_WARN, format("{}\n", pCallbackData->pMessage));
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+            logger->OutputDebug(LOG_LEVEL_INFO, format("{}\n", pCallbackData->pMessage));
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+            logger->OutputDebug(LOG_LEVEL_TRACE, format("{}\n", pCallbackData->pMessage));
+            break;
         }
         Sleep(1500);
         return VK_FALSE;

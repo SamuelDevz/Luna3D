@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Types.h"
+#include "Export.h"
 #include <vulkan/vulkan_core.h>
 
 namespace Luna
 {
-    class VkError
+    class DLL VkError
     {
     private:
         VkResult result;
@@ -13,7 +14,7 @@ namespace Luna
         string message;
         string funcName;
         string fileName;
-        
+
     public:
         explicit VkError() noexcept;
         explicit VkError(const VkResult res,
@@ -21,10 +22,10 @@ namespace Luna
             const string_view file,
             const int32 line,
             const string_view message = "") noexcept;
-        
+
         string ToString() const;
     };
-    
+
     #ifndef VkThrowIfFailed
     #define VkThrowIfFailed(x)                                                      \
     {                                                                               \

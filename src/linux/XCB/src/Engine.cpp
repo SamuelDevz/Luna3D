@@ -3,7 +3,7 @@
 #include <format>
 using std::format;
 
-namespace Luna 
+namespace Luna
 {
     Window*   Engine::window = nullptr;
     Input*    Engine::input = nullptr;
@@ -96,7 +96,7 @@ namespace Luna
             {
                 if (Quit(event, window->WMDeleteWindow()))
                     quit = true;
-                
+
                 EngineProc(event);
                 free(event);
 
@@ -106,7 +106,7 @@ namespace Luna
 
             if (input->XKeyPress(VK_PAUSE))
                 (paused) ? Resume() : Pause();
-            
+
             if (!paused)
             {
                 frameTime = FrameTime();

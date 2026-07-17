@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Types.h"
+#include "Export.h"
 #include "Logger.h"
 #include <vulkan/vulkan_core.h>
 
 namespace Luna
 {
-    class ValidationLayer
+    class DLL ValidationLayer
     {
     private:
         VkDebugUtilsMessengerEXT debugUtils;
@@ -17,7 +18,7 @@ namespace Luna
         ~ValidationLayer() noexcept;
 
         void Initialize(VkInstance instance, Logger * logger);
-        
+
         static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallbackUtils(
             VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,

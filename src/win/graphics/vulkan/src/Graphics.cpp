@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <format>
 #include <vector>
-using std::vector;
 using std::format;
+using std::vector;
 
 namespace Luna
 {
@@ -21,33 +21,35 @@ namespace Luna
         device{nullptr},
         surface{nullptr},
         swapchain{nullptr},
+        buffers{nullptr},
         backBufferIndex{},
-        commandBuffer{nullptr}, 
         commandPool{nullptr},
+        commandBuffer{nullptr},
         renderPass{nullptr},
         queue{nullptr},
-        fence{nullptr},
         imageAvailableSemaphore{nullptr},
-        renderFinishedSemaphore{nullptr}
+        renderFinishedSemaphore{nullptr},
+        fence{nullptr},
+        viewport{},
+        scissorRect{}
     {
-        validationlayer = new ValidationLayer();
+        validationLayer = new ValidationLayer();
     }
 
     Graphics::~Graphics() noexcept
     {
         vkDeviceWaitIdle(device);
 
-        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
         vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
         vkDestroyFence(device, fence, nullptr);
 
         vkDestroyRenderPass(device, renderPass, nullptr);
 
-        VkCommandBuffer commandBuffers[] { commandBuffer, copyCommandBuffer };
-        vkFreeCommandBuffers(device, commandPool, 2, commandBuffers);
+        vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
         vkDestroyCommandPool(device, commandPool, nullptr);
 
-        for (uint32 i = 0; i < backBufferCount; ++i)
+        for (size_t i = 0; i < backBufferCount; ++i)
         {
             vkDestroyFramebuffer(device, buffers[i].framebuffer, nullptr);
             vkDestroyImageView(device, buffers[i].view, nullptr);
@@ -57,14 +59,15 @@ namespace Luna
         vkDestroySwapchainKHR(device, swapchain, nullptr);
         vkDestroySurfaceKHR(instance, surface, nullptr);
 
-        SafeDelete(validationlayer);
-
         vkDestroyDevice(device, nullptr);
+
+        delete validationLayer;
+
         vkDestroyInstance(instance, nullptr);
     }
 
     static bool CheckExtensionSupported(
-        const vector<VkExtensionProperties> extensions, 
+        const vector<VkExtensionProperties> extensions,
         const string_view requestExtension)
     {
         return std::ranges::find_if(extensions,
@@ -74,11 +77,11 @@ namespace Luna
     }
 
     static void CheckSupportMemoryBudget(
-        VkPhysicalDevice gpu, 
-        const vector<VkExtensionProperties> instanceExtensions, 
+        VkPhysicalDevice gpu,
+        const vector<VkExtensionProperties> instanceExtensions,
         const vector<VkExtensionProperties> deviceExtensions)
     {
-        const bool supportMemoryBudget = 
+        const bool supportMemoryBudget =
             CheckExtensionSupported(instanceExtensions, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) &&
             CheckExtensionSupported(deviceExtensions, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
 
@@ -105,18 +108,18 @@ namespace Luna
 
             constexpr const uint32 BytesinMegaByte = 1048576U; // 1'048'576
 
-            Graphics::logger.OutputDebug(LOG_LEVEL_INFO, 
-                format("---> Video memory (size total): {}MB\n", 
+            Graphics::logger.OutputDebug(LOG_LEVEL_INFO,
+                format("---> Video memory (size total): {}MB\n",
                     memoryTotalsize / BytesinMegaByte)
             );
 
-            Graphics::logger.OutputDebug(LOG_LEVEL_INFO, 
-                format("---> Video memory (budget total): {}MB\n", 
+            Graphics::logger.OutputDebug(LOG_LEVEL_INFO,
+                format("---> Video memory (budget total): {}MB\n",
                     memoryTotalBudget / BytesinMegaByte)
             );
-                
-            Graphics::logger.OutputDebug(LOG_LEVEL_INFO, 
-                format("---> Video memory (usage total): {}MB\n", 
+
+            Graphics::logger.OutputDebug(LOG_LEVEL_INFO,
+                format("---> Video memory (usage total): {}MB\n",
                     memoryTotalUsage / BytesinMegaByte)
             );
         }
@@ -127,13 +130,13 @@ namespace Luna
         // --------------------------------------
         // Instance Layers
         // --------------------------------------
-        
+
         uint32 layerCount{};
         VkThrowIfFailed(vkEnumerateInstanceLayerProperties(&layerCount, nullptr))
 
         vector<VkLayerProperties> instanceLayers(layerCount);
         VkThrowIfFailed(vkEnumerateInstanceLayerProperties(&layerCount, instanceLayers.data()))
-        
+
         logger.OutputDebug(LOG_LEVEL_INFO, format("---> {} Instance Layer:\n", layerCount));
         for (const auto& layer : instanceLayers)
             logger.OutputDebug(LOG_LEVEL_INFO, format("\t{}\n", layer.layerName));
@@ -147,7 +150,7 @@ namespace Luna
 
         vector<VkExtensionProperties> instanceExtensions(extensionCount);
         VkThrowIfFailed(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, instanceExtensions.data()))
-        
+
         logger.OutputDebug(LOG_LEVEL_INFO, format("---> {} Instance Extensions:\n", extensionCount));
         for (const auto& extension : instanceExtensions)
             logger.OutputDebug(LOG_LEVEL_INFO, format("\t{}\n", extension.extensionName));
@@ -158,14 +161,14 @@ namespace Luna
 
         uint32 deviceExtensionCount{};
         VkThrowIfFailed(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, nullptr));
-        
+
         vector<VkExtensionProperties> deviceExtensions(deviceExtensionCount);
         VkThrowIfFailed(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, deviceExtensions.data()))
 
-		// --------------------------------------
-		// Video adapter (GPUs)
-		// --------------------------------------
-		
+    	// --------------------------------------
+    	// Video adapter (GPUs)
+    	// --------------------------------------
+
         uint32 gpuCount{};
         vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr);
 
@@ -176,37 +179,36 @@ namespace Luna
         {
             VkPhysicalDeviceProperties deviceProperties;
             vkGetPhysicalDeviceProperties(gpus[i], &deviceProperties);
-            logger.OutputDebug(LOG_LEVEL_INFO, 
-                format("---> Video adapter (GPU) {}: {}\n", 
-                    i + 1, deviceProperties.deviceName)
+            logger.OutputDebug(LOG_LEVEL_INFO,
+                format("---> Video adapter (GPU) {}: {}\n", i + 1, deviceProperties.deviceName)
             );
 
             CheckSupportMemoryBudget(gpus[i], instanceExtensions, deviceExtensions);
 
             switch (deviceProperties.deviceType)
             {
-                case VK_PHYSICAL_DEVICE_TYPE_OTHER:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Other\n");
-                    break;
-                case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Integrated GPU\n");
-                    break;
-                case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Discrete GPU\n");
-                    break;
-                case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Virtual GPU\n");
-                    break;
-                case VK_PHYSICAL_DEVICE_TYPE_CPU:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> CPU\n");
-                    break;
-                default:
-                    logger.OutputDebug(LOG_LEVEL_INFO, "---> Unknown device type\n");
-                    break;
+            case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+                logger.OutputDebug(LOG_LEVEL_INFO, "---> Other\n");
+                break;
+            case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+                logger.OutputDebug(LOG_LEVEL_INFO, "---> Integrated GPU\n");
+                break;
+            case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+                logger.OutputDebug(LOG_LEVEL_INFO, "---> Discrete GPU\n");
+                break;
+            case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+                logger.OutputDebug(LOG_LEVEL_INFO, "---> Virtual GPU\n");
+                break;
+            case VK_PHYSICAL_DEVICE_TYPE_CPU:
+                logger.OutputDebug(LOG_LEVEL_INFO, "---> CPU\n");
+                break;
+            default:
+                logger.OutputDebug(LOG_LEVEL_INFO, "---> Unknown device type\n");
+                break;
             }
-            
-            logger.OutputDebug(LOG_LEVEL_INFO, 
-                format("---> Feature Level: {}.{}.{}\n", 
+
+            logger.OutputDebug(LOG_LEVEL_INFO,
+                format("---> Feature Level: {}.{}.{}\n",
                     VK_API_VERSION_MAJOR(deviceProperties.apiVersion),
                     VK_API_VERSION_MINOR(deviceProperties.apiVersion),
                     VK_API_VERSION_PATCH(deviceProperties.apiVersion))
@@ -218,35 +220,37 @@ namespace Luna
         // -----------------------------------------
 
         DWORD deviceNum{};
-        DISPLAY_DEVICE dd{};
-        dd.cb = sizeof(DISPLAY_DEVICE);
-        while (EnumDisplayDevices(nullptr, deviceNum, &dd, 0)) 
+        DISPLAY_DEVICE displayDevice{};
+        displayDevice.cb = sizeof(DISPLAY_DEVICE);
+        while (EnumDisplayDevices(nullptr, deviceNum, &displayDevice, 0))
         {
-            if (dd.StateFlags & DISPLAY_DEVICE_ACTIVE) 
-                logger.OutputDebug(LOG_LEVEL_INFO, format("---> Monitor: {}\n", dd.DeviceName));
+            if (displayDevice.StateFlags & DISPLAY_DEVICE_ACTIVE)
+                logger.OutputDebug(LOG_LEVEL_INFO, format("---> Monitor: {}\n", displayDevice.DeviceName));
             deviceNum++;
+            displayDevice = {};
+            displayDevice.cb = sizeof(DISPLAY_DEVICE);
         }
 
         // ------------------------------------------
-		// Video mode (resolution)
-		// ------------------------------------------
+        // Video mode (resolution)
+        // ------------------------------------------
 
-		uint32 dpi { GetDpiForSystem() };
-		int32 screenWidth { GetSystemMetricsForDpi(SM_CXSCREEN, dpi) };
-		int32 screenHeight { GetSystemMetricsForDpi(SM_CYSCREEN, dpi) };
-		
-		DEVMODE devMode{};
-		devMode.dmSize = sizeof(DEVMODE);
-		EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &devMode);
-		uint32 refreshRate = devMode.dmDisplayFrequency;
+    	uint32 dpi { GetDpiForSystem() };
+    	int32 screenWidth { GetSystemMetricsForDpi(SM_CXSCREEN, dpi) };
+    	int32 screenHeight { GetSystemMetricsForDpi(SM_CYSCREEN, dpi) };
 
-		logger.OutputDebug(LOG_LEVEL_INFO, 
-            format("---> Resolution: {}x{} {}Hz\n", 
+    	DEVMODE devMode{};
+    	devMode.dmSize = sizeof(DEVMODE);
+    	EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &devMode);
+    	uint32 refreshRate = devMode.dmDisplayFrequency;
+
+    	logger.OutputDebug(LOG_LEVEL_INFO,
+            format("---> Resolution: {}x{} {}Hz\n",
                 screenWidth, screenHeight, refreshRate)
         );
     }
 
-    void Graphics::Initialize(const Window* const window)
+    void Graphics::Initialize(const Window * const window)
     {
         // ---------------------------------------------------
         // Instance
@@ -293,14 +297,14 @@ namespace Luna
         VkThrowIfFailed(vkCreateInstance(&instanceInfo, nullptr, &instance));
 
     #ifdef _DEBUG
-        validationlayer->Initialize(instance, &logger);
+        validationLayer->Initialize(instance, &logger);
     #endif
 
         // ---------------------------------------------------
         // Physical Device
         // ---------------------------------------------------
 
-        uint32 gpuCount;
+        uint32 gpuCount{};
         VkThrowIfFailed(vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr));
 
         vector<VkPhysicalDevice> gpus(gpuCount);
@@ -323,7 +327,7 @@ namespace Luna
 
         bool found = false;
         uint32 queueFamilyIndex{};
-        for (uint32 i = 0; i < queueFamilyCount && !found; ++i)
+        for (size_t i = 0; i < queueFamilyCount && !found; ++i)
         {
             if (queueProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
@@ -331,6 +335,8 @@ namespace Luna
                 found = true;
             }
         }
+
+        VkThrowIfError(VK_ERROR_FEATURE_NOT_PRESENT, !found)
 
         float queuePriorities { 1.0f };
         VkDeviceQueueCreateInfo queueInfo{};
@@ -361,7 +367,6 @@ namespace Luna
         deviceInfo.pEnabledFeatures = nullptr;
 
         VkThrowIfFailed(vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device));
-        vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue);
 
         // ---------------------------------------------------
         // Surface
@@ -380,7 +385,6 @@ namespace Luna
 
         // Present Mode
         VkPresentModeKHR swapchainPresentMode{};
-
         if(vSync)
         {
             swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
@@ -394,8 +398,8 @@ namespace Luna
 
             vector<VkPresentModeKHR> presentModes(presentModeCount);
             vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data());
-        
-            for (uint32 i = 0; i < presentModeCount; ++i)
+
+            for (size_t i = 0; i < presentModeCount; ++i)
             {
                 if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
                 {
@@ -405,7 +409,6 @@ namespace Luna
             }
         }
 
-        // Surface Format
         uint32 surfaceFormatCount{};
         vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatCount, nullptr);
 
@@ -413,7 +416,7 @@ namespace Luna
         vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatCount, surfaceFormats.data());
 
         VkSurfaceFormatKHR surfaceFormat = surfaceFormats[0];
-        for (uint32 i = 0; i < surfaceFormatCount; ++i)
+        for (size_t i = 0; i < surfaceFormatCount; ++i)
         {
             if (surfaceFormats[i].format == VK_FORMAT_B8G8R8A8_UNORM &&
                 surfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
@@ -423,7 +426,6 @@ namespace Luna
             }
         }
 
-        // Surface Capabilities
         VkSurfaceCapabilitiesKHR surfaceCapabilities{};
         VkThrowIfFailed(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities));
 
@@ -432,6 +434,10 @@ namespace Luna
             preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
         else
             preTransform = surfaceCapabilities.currentTransform;
+
+        backBufferCount = surfaceCapabilities.minImageCount + 1;
+        if (surfaceCapabilities.maxImageCount != 0 && backBufferCount > surfaceCapabilities.maxImageCount)
+            backBufferCount = surfaceCapabilities.maxImageCount;
 
         backBufferCount = surfaceCapabilities.minImageCount + 1;
         if (surfaceCapabilities.maxImageCount != 0 && backBufferCount > surfaceCapabilities.maxImageCount)
@@ -557,7 +563,7 @@ namespace Luna
         // Frame Buffers
         // ---------------------------------------------------
 
-        for (uint32 i = 0; i < backBufferCount; ++i)
+        for (size_t i = 0; i < backBufferCount; ++i)
         {
             VkFramebufferCreateInfo framebufferCreateInfo{};
             framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -572,7 +578,7 @@ namespace Luna
         }
 
         // ---------------------------------------------------
-        // Semaphores and Fence
+        // Fence, Semaphores and Queue
         // ---------------------------------------------------
 
         VkFenceCreateInfo fenceInfo{};
@@ -586,10 +592,48 @@ namespace Luna
 
         VkThrowIfFailed(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &imageAvailableSemaphore));
         VkThrowIfFailed(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphore));
+
+        vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue);
+
+        // ---------------------------------------------------
+        // Viewport and Scissor Rectangle
+        // ---------------------------------------------------
+
+        viewport.x = 0;
+        viewport.y = 0;
+        viewport.width = static_cast<float>(window->Width());
+        viewport.height = static_cast<float>(window->Height());
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+
+        scissorRect = { 0, 0, static_cast<uint32>(window->Width()), static_cast<uint32>(window->Height()) };
+
+        // ---------------------------------------------------
+        // Backbuffer Background Color
+        // ---------------------------------------------------
+
+        const COLORREF color = window->Color();
+
+        bgColor.float32[0] = GetRValue(color) / 255.0f;
+        bgColor.float32[1] = GetGValue(color) / 255.0f;
+        bgColor.float32[2] = GetBValue(color) / 255.0f;
+        bgColor.float32[3] = 1.0f;
     }
 
     void Graphics::Clear()
     {
+        vkWaitForFences(device, 1, &fence, true, UINT64_MAX);
+        vkResetFences(device, 1, &fence);
+
+        VkThrowIfFailed(vkAcquireNextImageKHR(
+            device,
+            swapchain,
+            UINT64_MAX,
+            imageAvailableSemaphore,
+            nullptr,
+            &backBufferIndex
+        ));
+
         VkThrowIfFailed(vkResetCommandBuffer(commandBuffer, 0));
 
         VkCommandBufferBeginInfo beginInfo{};
@@ -616,18 +660,6 @@ namespace Luna
 
     void Graphics::Present()
     {
-        vkWaitForFences(device, 1, &fence, true, UINT64_MAX);
-        vkResetFences(device, 1, &fence);
-
-        VkThrowIfFailed(vkAcquireNextImageKHR(
-            device,
-            swapchain,
-            UINT64_MAX,
-            imageAvailableSemaphore,
-            nullptr,
-            &backBufferIndex
-        ));
-
         const VkPipelineStageFlags waitStages[]
         { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
@@ -652,88 +684,6 @@ namespace Luna
         presentInfo.pImageIndices = &backBufferIndex;
 
         VkThrowIfFailed(vkQueuePresentKHR(queue, &presentInfo));
-    }
-
-    static uint32 FindMemoryType(const VkPhysicalDevice physicalDevice, 
-        const uint32 typeFilter, 
-        const VkMemoryPropertyFlags properties)
-    {
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
-
-        for (uint32 i = 0; i < memProperties.memoryTypeCount; ++i)
-        {
-            if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-                return i;
-        }
-
-        return 0;
-    }
-
-    void Graphics::Allocate(const VkDeviceSize size,
-        const uint32 typeFilter,
-        const VkMemoryPropertyFlags properties,
-        VkDeviceMemory* bufferMemory)
-    {
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = size;
-        allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, typeFilter, properties);
-
-        VkThrowIfFailed(vkAllocateMemory(device, &allocInfo, nullptr, bufferMemory));
-    }
-
-    void Graphics::Allocate(const VkDeviceSize size,
-        const VkBufferUsageFlags usageFlags,
-        const VkMemoryPropertyFlags properties,
-        VkBuffer* buffer,
-        VkDeviceMemory* bufferMemory)
-    {
-        VkBufferCreateInfo bufferInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = size;
-        bufferInfo.usage = usageFlags;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        VkThrowIfFailed(vkCreateBuffer(device, &bufferInfo, nullptr, buffer));
-
-        VkMemoryRequirements memRequirements{};
-
-        vkGetBufferMemoryRequirements(device, *buffer, &memRequirements);
-        Allocate(memRequirements.size, memRequirements.memoryTypeBits, properties, bufferMemory);
-
-        VkThrowIfFailed(vkBindBufferMemory(device, *buffer, *bufferMemory, 0));
-    }
-
-    void Graphics::Copy(const void* vertices, const VkDeviceSize size, VkDeviceMemory bufferMemory)
-    {
-        void* data;
-        VkThrowIfFailed(vkMapMemory(device, bufferMemory, 0, size, 0, &data));
-        CopyMemory(data, vertices, size);
-        vkUnmapMemory(device, bufferMemory);
-    }
-
-    void Graphics::Copy(VkBuffer destination, const VkBuffer source, const VkDeviceSize size)
-    {
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        VkThrowIfFailed(vkBeginCommandBuffer(copyCommandBuffer, &beginInfo));
-
-        VkBufferCopy copyRegion{};
-        copyRegion.size = size;
-        vkCmdCopyBuffer(copyCommandBuffer, source, destination, 1, &copyRegion);
-
-        VkThrowIfFailed(vkEndCommandBuffer(copyCommandBuffer));
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &copyCommandBuffer;
-
-        VkThrowIfFailed(vkQueueSubmit(queue, 1, &submitInfo, nullptr));
-        VkThrowIfFailed(vkQueueWaitIdle(queue));
     }
 
     static uint32 FindMemoryType(const VkPhysicalDevice physicalDevice, 

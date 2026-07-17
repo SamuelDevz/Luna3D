@@ -8,9 +8,9 @@ namespace Luna
     {
     }
 
-    VkError::VkError(const VkResult res, 
-        const string_view func, 
-        const string_view file, 
+    VkError::VkError(const VkResult res,
+        const string_view func,
+        const string_view file,
         const int32 line,
         const string_view message) noexcept
         : result{res}, funcName{func}, lineNum{line}, message{message}
@@ -20,7 +20,7 @@ namespace Luna
         if (pos != string::npos)
             fileName = file.substr(pos + 1);
     }
-    
+
     constexpr const char* VkResultStr(const VkResult err) noexcept
     {
         switch (err)
