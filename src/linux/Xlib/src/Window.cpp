@@ -4,6 +4,13 @@
 #include <X11/Xatom.h>
 #include <png++/png.hpp>
 
+#define _NET_WM_STATE_REMOVE        0    // remove/unset property
+#define _NET_WM_STATE_ADD           1    // add/set property
+#define _NET_WM_STATE_TOGGLE        2    // toggle property
+
+#define MWM_HINTS_DECORATIONS   2
+#define MWM_DECOR_ALL           1
+
 namespace Luna
 {
     void (*Window::inFocus)() = nullptr;
@@ -103,6 +110,55 @@ namespace Luna
         delete[] data;
     }
 
+    void Fullscreen(Display *display, ::Window window)
+    {
+        Atom netWmState = XInternAtom(display, "_NET_WM_STATE", false);
+        Atom netWmStateFullscreen = XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", false);
+
+        XSizeHints sizehints{};
+        long flags{};
+        XGetWMNormalHints(display, window, &sizehints, &flags);
+
+        sizehints.flags &= ~(PMinSize | PMaxSize);
+        XSetWMNormalHints(display, window, &sizehints);
+
+        XEvent event{};
+        event.type = ClientMessage;
+        event.xclient.window = window;
+        event.xclient.format = 32;
+        event.xclient.message_type = netWmState;
+        event.xclient.data.l[0] = _NET_WM_STATE_ADD;
+        event.xclient.data.l[1] = netWmStateFullscreen;
+        
+        XSendEvent(display, RootWindow(display, 0), false, 
+            SubstructureNotifyMask | SubstructureRedirectMask, &event);
+        XFlush(display);
+    }
+
+    void Borderless(Display * display, ::Window window)
+    {
+        struct
+        {
+            unsigned long flags;
+            unsigned long functions;
+            unsigned long decorations;
+            long input_mode;
+            unsigned long status;
+        } hints = {};
+    
+        hints.flags = MWM_HINTS_DECORATIONS;
+        
+        Atom motifwmHints = XInternAtom(display, "_MOTIF_WM_HINTS", false);
+        XChangeProperty(display, window,
+            motifwmHints,
+            motifwmHints, 
+            32,
+            PropModeReplace,
+            (unsigned char*) &hints,
+            sizeof(hints) / sizeof(long)
+        );
+    }
+
     bool Window::Create() noexcept
     {
         if(!display)
@@ -137,31 +193,24 @@ namespace Luna
         sizeHints.y = windowPosY;
         sizeHints.min_width = sizeHints.max_width = windowWidth;
         sizeHints.min_height = sizeHints.max_height = windowHeight;
-        XSetWMNormalHints(display, window, &sizeHints);
 
         XWMHints wmHints{};
         wmHints.initial_state = NormalState;
         wmHints.input = true;
-        wmHints.flags = StateHint | IconPixmapHint | InputHint;
+        wmHints.flags = StateHint | InputHint;
+        XSetWMProperties(display, window, nullptr, nullptr, nullptr, 0, &sizeHints, &wmHints, nullptr);
 
-        XSetWMProperties(
-            display, 
-            window, 
-            nullptr, 
-            nullptr, 
-            nullptr, 
-            0, 
-            &sizeHints, 
-            &wmHints, 
-            nullptr
-        );
-        
         wmDeleteWindow = XInternAtom(display, "WM_DELETE_WINDOW", false);
         wmProtocols = XInternAtom(display, "WM_PROTOCOLS", false);
         if(!XSetWMProtocols(display, window, &wmDeleteWindow, 1))
             return false;
 
         XMapRaised(display, window);
+
+        if(windowMode == BORDERLESS)
+            Borderless(display, window);
+        else if(windowMode == FULLSCREEN)
+            Fullscreen(display, window);
 
         XDefineCursor(display, window, windowCursor);
         
