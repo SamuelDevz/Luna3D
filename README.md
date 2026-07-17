@@ -22,8 +22,6 @@ Luna3D/
 └── README.md           # Esta documentação
 ```
 
------
-
 ## Como construir
 
 ### Dependências
@@ -33,19 +31,19 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 - CMake 3.5 or maior
 - Compilador C++ com C++20
 
-#### Windows
+### Windows
 
 - [Windows 10 SDK](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads)
 
-#### Linux
+### Linux
 
-##### XLib
+#### XLib
 
 - X11
 - Xcursor
 - png
 
-##### XCB
+#### XCB
 
 - xcb
 - x11-xcb
@@ -53,8 +51,9 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 - xcb-icccm
 - Xcursor
 - png
+- xkbcommon
 
-OBS: Tu precisa do arquivo no formato Xcursor para mudar o cursor da janela. Uma dica seria pegar um arquivo .CUR e converte-lo usando [win2xcur](https://github.com/quantum5/win2xcur)
+**OBS:** Tu precisa do arquivo no formato Xcursor para mudar o cursor da janela. Uma dica seria pegar um arquivo .CUR e converte-lo usando [win2xcur](https://github.com/quantum5/win2xcur)
 
 ### Configuração e Construção do projeto
 
