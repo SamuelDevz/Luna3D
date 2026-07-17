@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Graphics.h"
 #include "Window.h"
 #include "Input.h"
 #include "Timer.h"
@@ -18,6 +19,7 @@ namespace Luna
         int32 Loop();
 
     public:
+        static Graphics* graphics;
         static Window * window;
         static Input * input;
         static Game * game;

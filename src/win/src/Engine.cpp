@@ -1,6 +1,6 @@
+#include "KeyCodes.h"
 #include "Engine.h"
 #include "WinInclude.h"
-#include "KeyCodes.h"
 #include <windows.h>
 #include <timeapi.h>
 #include <format>
@@ -8,6 +8,7 @@ using std::format;
 
 namespace Luna 
 {
+    Graphics* Engine::graphics  = nullptr;
     Window*   Engine::window = nullptr;
     Input*    Engine::input = nullptr;
     Game*     Engine::game = nullptr;
@@ -18,6 +19,7 @@ namespace Luna
     Engine::Engine() noexcept
     {
         window = new Window();
+        graphics = new Graphics();
     }
 
     Engine::~Engine() noexcept
@@ -25,6 +27,7 @@ namespace Luna
         delete game;
         delete input;
         delete window;
+        delete graphics;
     }
 
     int32 Engine::Start(Game * const game)
@@ -34,6 +37,8 @@ namespace Luna
         window->Create();
 
         input = new Input();
+
+        graphics->Initialize(window);
 
         SetWindowLongPtr(window->Id(), GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(EngineProc));
 
