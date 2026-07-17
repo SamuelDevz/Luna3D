@@ -17,14 +17,13 @@ endif()
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     option(BUILD_X11 "Build the engine using Xlib" OFF)
     option(BUILD_XCB "Build the engine using XCB" OFF)
-    option(BUILD_WAYLAND "Build the engine using WAYLAND" OFF)
 endif ()
 
 add_subdirectory(src)
 
 add_library(Luna-Libraries INTERFACE)
 add_library(Luna::Libraries ALIAS Luna-Libraries)
-target_link_libraries(Luna-Libraries INTERFACE engine window)
+target_link_libraries(Luna-Libraries INTERFACE engine graphics window)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
