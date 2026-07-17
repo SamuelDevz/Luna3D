@@ -7,7 +7,7 @@ using std::format;
 namespace Luna
 {
     Logger Graphics::logger;
-    
+
     Graphics::Graphics() noexcept
         : refreshRate{},
         backBufferCount{2},
@@ -31,10 +31,13 @@ namespace Luna
         currentFence{}
     {
         renderTargets = new ID3D12Resource*[backBufferCount] {nullptr};
+        debugLayer = new DebugLayer(logger);
     }
 
     Graphics::~Graphics() noexcept
     {
+        SafeDelete(debugLayer);
+        
         WaitCommandQueue();
 
         if (renderTargets)
@@ -58,7 +61,7 @@ namespace Luna
      	SafeRelease(device);
      	SafeRelease(factory);
     }
-    
+
     void Graphics::LogHardwareInfo() noexcept
     {
         const uint32 BytesinMegaByte = 1048576U; // 1'048'576
@@ -102,11 +105,11 @@ namespace Luna
             D3D_FEATURE_LEVEL_9_2,
             D3D_FEATURE_LEVEL_9_1
         };
-        
+
         D3D12_FEATURE_DATA_FEATURE_LEVELS featureLevelsInfo;
         featureLevelsInfo.NumFeatureLevels = 10;
         featureLevelsInfo.pFeatureLevelsRequested = featureLevels;
-        
+
         device->CheckFeatureSupport(
             D3D12_FEATURE_FEATURE_LEVELS,
             &featureLevelsInfo,
@@ -116,6 +119,7 @@ namespace Luna
             string text = "---> Feature Level: ";
             switch (featureLevelsInfo.MaxSupportedFeatureLevel)
             {
+                case D3D_FEATURE_LEVEL_12_2: text += "12_2\n"; break;
                 case D3D_FEATURE_LEVEL_12_1: text += "12_1\n"; break;
                 case D3D_FEATURE_LEVEL_12_0: text += "12_0\n"; break;
                 case D3D_FEATURE_LEVEL_11_1: text += "11_1\n"; break;
@@ -173,16 +177,9 @@ namespace Luna
         // ---------------------------------------------------
 
         uint32 factoryFlags{};
-
-    #ifdef _DEBUG
-    	factoryFlags = DXGI_CREATE_FACTORY_DEBUG;
-
-    	ID3D12Debug * debugController;
-    	ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
-    	debugController->EnableDebugLayer();
-    #endif
-
-        ThrowIfFailed(CreateDXGIFactory2(factoryFlags, IID_PPV_ARGS(&factory)));
+        
+        debugLayer->InitDebugLayer();
+        debugLayer->CreateFactory(IID_PPV_ARGS(&factory));
 
     	if FAILED(D3D12CreateDevice(
     		nullptr,
@@ -197,12 +194,12 @@ namespace Luna
     			IID_PPV_ARGS(&device)));
 
     		warp->Release();
-        
+
             logger.OutputDebug(LOG_LEVEL_DEBUG, "---> Using WARP Adapter: D3D12 is not supported.\n");
     	}
-     
+
         RefreshRate();
-    
+
     #ifdef _DEBUG
         LogHardwareInfo();
     #endif
