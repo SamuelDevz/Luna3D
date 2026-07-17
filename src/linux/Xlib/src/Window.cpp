@@ -142,7 +142,7 @@ namespace Luna
         return true;
     }
 
-    void SetIcon(Display * display, ::Window window, const string_view filename)
+    void SetIcon(Display * display, XWindow window, const string_view filename)
     {
         int width, height;
         unsigned char * dataImage;
@@ -177,7 +177,7 @@ namespace Luna
         delete[] icon;
     }
 
-    void Fullscreen(Display *display, ::Window window)
+    void Fullscreen(Display *display, XWindow window)
     {
         Atom netWmState = XInternAtom(display, "_NET_WM_STATE", false);
         Atom netWmStateFullscreen = XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", false);
@@ -202,7 +202,7 @@ namespace Luna
         XFlush(display);
     }
 
-    void Borderless(Display * display, ::Window window)
+    void Borderless(Display * display, XWindow window)
     {
         struct
         {
