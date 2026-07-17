@@ -42,7 +42,7 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 
 - X11
 - Xcursor
-- png++
+- png
 
 OBS: Tu precisa do arquivo no formato Xcursor para mudar o cursor da janela. Uma dica seria pegar um arquivo .CUR e converte-lo usando [win2xcur](https://github.com/quantum5/win2xcur)
 
