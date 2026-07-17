@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Types.h"
+#include "Export.h"
 #include <vulkan/vulkan_core.h>
 
 namespace Luna
 {
-    class VkError
+    class DLL VkError
     {
     private:
         VkResult result;

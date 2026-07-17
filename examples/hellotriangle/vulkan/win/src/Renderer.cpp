@@ -122,7 +122,7 @@ namespace Luna
         vertexInputAttributeDescription[1].binding = 0;
         vertexInputAttributeDescription[1].location = 1;
         vertexInputAttributeDescription[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        vertexInputAttributeDescription[1].offset = geometry->vertexCount * sizeof(float);
+        vertexInputAttributeDescription[1].offset = sizeof(float) * geometry->vertexCount;
 
         VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo{};
         vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
