@@ -8,6 +8,8 @@
 
 namespace Luna
 {
+    Logger Graphics::logger;
+    
     Graphics::Graphics() noexcept : instance{nullptr}
     {
     }

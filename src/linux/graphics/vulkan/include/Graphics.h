@@ -3,6 +3,7 @@
 #include "Types.h"
 #include "Export.h"
 #include "Window.h"
+#include "Logger.h"
 #include <vulkan/vulkan.h>
 
 namespace Luna
@@ -14,6 +15,8 @@ namespace Luna
         VkInstance                   instance;
 
     public:
+        static Logger logger;
+
         explicit Graphics() noexcept;
         ~Graphics() noexcept;
 
