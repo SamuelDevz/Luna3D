@@ -2,6 +2,8 @@
 
 #include "Types.h"
 #include "KeyCodes.h"
+#include "MessageBox.h"
+#include "Error.h"
 #include "Window.h"
 #include "Input.h"
 #include "Game.h"
