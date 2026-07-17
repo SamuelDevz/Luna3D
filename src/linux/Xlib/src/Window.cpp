@@ -64,17 +64,44 @@ namespace Luna
         windowPosY = (screen->height - windowHeight) / 2;
     }
 
-    void Window::Close() noexcept
+    static void SendEventToWM(Display * display, XWindow window, Atom type, 
+        long eventMask, long a, long b, long c = 0, long d = 0, long e = 0)
     {
         XEvent event{};
         event.type = ClientMessage;
         event.xclient.window = window;
-        event.xclient.message_type = wmProtocols;
         event.xclient.format = 32;
-        event.xclient.data.l[0] = wmDeleteWindow;
-        event.xclient.data.l[1] = CurrentTime;
-        XSendEvent(display, window, false, NoEventMask, &event);
+        event.xclient.message_type = type;
+        event.xclient.data.l[0] = a;
+        event.xclient.data.l[1] = b;
+        event.xclient.data.l[2] = c;
+        event.xclient.data.l[3] = d;
+        event.xclient.data.l[4] = e;
+
+        XSendEvent(display, window, false, eventMask, &event);
         XFlush(display);
+    }
+
+    static void X11ChangeProperty(Display * display, XWindow window, Atom property, 
+        Atom type, const unsigned char*	data, int nelements)
+    {
+        XChangeProperty(display, window,
+            property,
+            type, 
+            32,
+            PropModeReplace,
+            data,
+            nelements
+        );
+    }
+
+    void Window::Close() noexcept
+    {
+        SendEventToWM(display, window, 
+            wmProtocols, 
+            NoEventMask, 
+            wmDeleteWindow, 
+            CurrentTime);
     }
 
     bool LoadPNG(const string_view filename, unsigned char ** imageData, int & width, int & height)
@@ -165,11 +192,9 @@ namespace Luna
         }
 
         Atom netWmIcon = XInternAtom(display, "_NET_WM_ICON", false);
-        XChangeProperty(display, window,
+        X11ChangeProperty(display, window,
             netWmIcon,
             XA_CARDINAL, 
-            32,
-            PropModeReplace,
             (unsigned char*) icon,
             longCount);
 
@@ -188,17 +213,11 @@ namespace Luna
         sizehints.flags &= ~(PMinSize | PMaxSize);
         XSetWMNormalHints(display, window, &sizehints);
 
-        XEvent event{};
-        event.type = ClientMessage;
-        event.xclient.window = window;
-        event.xclient.format = 32;
-        event.xclient.message_type = netWmState;
-        event.xclient.data.l[0] = _NET_WM_STATE_ADD;
-        event.xclient.data.l[1] = netWmStateFullscreen;
-        
-        XSendEvent(display, RootWindow(display, 0), false, 
-            SubstructureNotifyMask | SubstructureRedirectMask, &event);
-        XFlush(display);
+        SendEventToWM(display, RootWindow(display, 0), 
+            netWmState, 
+            SubstructureNotifyMask | SubstructureRedirectMask, 
+            _NET_WM_STATE_ADD, 
+            netWmStateFullscreen);
     }
 
     void Borderless(Display * display, XWindow window)
@@ -215,14 +234,11 @@ namespace Luna
         hints.flags = MWM_HINTS_DECORATIONS;
         
         Atom motifwmHints = XInternAtom(display, "_MOTIF_WM_HINTS", false);
-        XChangeProperty(display, window,
+        X11ChangeProperty(display, window,
             motifwmHints,
             motifwmHints, 
-            32,
-            PropModeReplace,
             (unsigned char*) &hints,
-            sizeof(hints) / sizeof(long)
-        );
+            sizeof(hints) / sizeof(long));
     }
 
     bool Window::Create() noexcept
