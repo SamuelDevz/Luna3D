@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Window.h"
+#include "Export.h"
 
 namespace Luna
 {
-    class Game
+    class DLL Game
     {
     protected:
         static Window * window;

@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_EXAMPLES "Build examples programs" OFF)
+option(SHARED_LIBRARIES "Use the shared libs" OFF)
 
 add_subdirectory(src)
 

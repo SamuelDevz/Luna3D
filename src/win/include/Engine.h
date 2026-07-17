@@ -2,10 +2,11 @@
 
 #include "Window.h"
 #include "Game.h"
+#include "Export.h"
 
 namespace Luna
 {
-    class Engine
+    class DLL Engine
     {
     private:
         static Game * game;
