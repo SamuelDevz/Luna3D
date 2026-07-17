@@ -23,9 +23,9 @@ int main()
 
         return exit;
     }
-    catch (const Error & e)
+    catch (Error & e)
     {
-        MessageBox(nullptr, e.ToString().c_str(), "Window Game", MB_OK);
+        MessageBox("Window Game", e.ToString().c_str());
         return 0;
     }
 
