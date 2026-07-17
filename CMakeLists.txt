@@ -7,8 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(BUILD_EXAMPLES "Build examples programs" OFF)
 option(SHARED_LIBRARIES "Use the shared libs" OFF)
 
-if(CMAKE_TYPE_BUILD STREQUAL "")
-    set(CMAKE_TYPE_BUILD "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "")
+    set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
