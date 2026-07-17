@@ -17,7 +17,7 @@ namespace Luna
         const string_view message) noexcept
         : display{display}, hrCode{hr}, funcName{func}, lineNum{line}, message{message}
     {
-        auto pos = file.find_last_of('\\');
+        auto pos = file.find_last_of('/');
 
         if (pos != string::npos)
             fileName = file.substr(pos + 1);
