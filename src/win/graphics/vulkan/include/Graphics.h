@@ -16,6 +16,8 @@ namespace Luna
         VkInstance                   instance;
         VkPhysicalDevice             physicalDevice;
 
+        void LogHardwareInfo() const;
+
         ValidationLayer * validationLayer;
 
     public:
