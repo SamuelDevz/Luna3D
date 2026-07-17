@@ -7,6 +7,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(BUILD_EXAMPLES "Build examples programs" OFF)
 option(SHARED_LIBRARIES "Use the shared libs" OFF)
 
+if(CMAKE_TYPE_BUILD STREQUAL "")
+    set(CMAKE_TYPE_BUILD "Debug")
+endif()
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     option(BUILD_X11 "Build the engine using Xlib" OFF)
 endif ()
