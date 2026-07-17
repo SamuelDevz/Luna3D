@@ -69,6 +69,10 @@ namespace Luna
         XEvent event{};
         event.type = ClientMessage;
         event.xclient.window = window;
+        event.xclient.message_type = wmProtocols;
+        event.xclient.format = 32;
+        event.xclient.data.l[0] = wmDeleteWindow;
+        event.xclient.data.l[1] = CurrentTime;
         XSendEvent(display, window, false, NoEventMask, &event);
         XFlush(display);
     }
