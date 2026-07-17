@@ -1,1 +1,2 @@
 add_subdirectory(simplewindow)
+add_subdirectory(hellotriangle)
