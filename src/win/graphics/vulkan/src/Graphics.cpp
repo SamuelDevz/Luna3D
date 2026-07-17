@@ -1,7 +1,6 @@
 #include "Graphics.h"
 #include "VkError.h"
 #include "Utils.h"
-#include <debugapi.h>
 #include <vulkan/vulkan_win32.h>
 #include <algorithm>
 #include <format>
@@ -22,7 +21,10 @@ namespace Luna
         surface{nullptr},
         swapchain{nullptr},
         buffers{nullptr},
-        backBufferIndex{}
+        backBufferIndex{},
+        commandPool{nullptr},
+        commandBuffer{nullptr},
+        renderPass{nullptr}
     {
         validationLayer = new ValidationLayer();
     }
@@ -30,6 +32,11 @@ namespace Luna
     Graphics::~Graphics() noexcept
     {
         vkDeviceWaitIdle(device);
+
+        vkDestroyRenderPass(device, renderPass, nullptr);
+
+        vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+        vkDestroyCommandPool(device, commandPool, nullptr);
 
         for (size_t i = 0; i < backBufferCount; ++i)
             vkDestroyImageView(device, buffers[i].view, nullptr);
@@ -466,5 +473,67 @@ namespace Luna
 
             VkThrowIfFailed(vkCreateImageView(device, &colorImageView, nullptr, &buffers[i].view));
         }
+
+        // ---------------------------------------------------
+        // Command Buffers and Command Pool
+        // ---------------------------------------------------
+
+        VkCommandPoolCreateInfo cmdPoolCreateInfo{};
+        cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        cmdPoolCreateInfo.queueFamilyIndex = queueFamilyIndex;
+
+        VkThrowIfFailed(vkCreateCommandPool(device, &cmdPoolCreateInfo, nullptr, &commandPool));
+
+        VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
+        commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        commandBufferAllocateInfo.commandPool = commandPool;
+        commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        commandBufferAllocateInfo.commandBufferCount = 1;
+
+        VkThrowIfFailed(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &commandBuffer));
+        
+        // ---------------------------------------------------
+        // Renderpass
+        // ---------------------------------------------------
+
+        VkAttachmentDescription attachmentDescription{};
+        attachmentDescription.format = surfaceFormat.format;
+        attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+        attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        VkAttachmentReference colorAttachmentReference{};
+        colorAttachmentReference.attachment = 0;
+        colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subPassDescription{};
+        subPassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subPassDescription.colorAttachmentCount = 1;
+        subPassDescription.pColorAttachments = &colorAttachmentReference;
+
+        VkSubpassDependency subpassDependency{};
+        subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        subpassDependency.dstSubpass = 0;
+        subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpassDependency.srcAccessMask = 0;
+        subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        subpassDependency.dependencyFlags = 0;
+
+        VkRenderPassCreateInfo renderPassCreateInfo{};
+        renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        renderPassCreateInfo.attachmentCount = 1;
+        renderPassCreateInfo.pAttachments = &attachmentDescription;
+        renderPassCreateInfo.subpassCount = 1;
+        renderPassCreateInfo.pSubpasses = &subPassDescription;
+        renderPassCreateInfo.dependencyCount = 1;
+        renderPassCreateInfo.pDependencies = &subpassDependency;
+
+        VkThrowIfFailed(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass));
     }
 }
