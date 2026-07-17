@@ -1,19 +1,24 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
+#include <source_location>
+#include <iostream>
 
 std::string GetCursorFile()
 {
-    std::string pathCursor = __FILE__;
-    pathCursor = pathCursor.substr(0, 58);
-    pathCursor += "/resources/Cursor";
-    return pathCursor;
+    const std::source_location& location = std::source_location::current();
+    const std::filesystem::path baseDir = std::filesystem::path(location.file_name()).parent_path();
+    std::string cursorPath = baseDir.string().substr(0, baseDir.string().size() - 8);
+    cursorPath += "/resources/Cursor";
+    return cursorPath;
 }
 
 std::string GetIconFile()
 {
-    std::string pathCursor = __FILE__;
-    pathCursor = pathCursor.substr(0, 58);
-    pathCursor += "/resources/linux.png";
-    return pathCursor;
+    const std::source_location& location = std::source_location::current();
+    const std::filesystem::path baseDir = std::filesystem::path(location.file_name()).parent_path();
+    std::string iconPath = baseDir.string().substr(0, baseDir.string().size() - 8);
+    iconPath += "/resources/Linux.png";
+    return iconPath;
 }
