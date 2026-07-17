@@ -16,6 +16,7 @@ Luna3D/
 │   └── ...             # Outras plataformas (Em breve)
 ├── examples/           # Alguns exemplos de código usando a game engine
 │   ├── simplewindow/   # Cria um simples janela
+│   ├── hellotriangle/  # Cria um simples triangle na tela
 │   └── ...             # Outros exemplos (Em breve)
 ├── build/              # Diretório de saída da compilação (ignorado pelo Git)
 ├── CMakeLists.txt      # Automatiza o processo de build
@@ -84,6 +85,7 @@ cmake --build build [Release/Debug]
 |:-----------:|:----------:|:---------:|:-----:|
 | `BUILD_X11` | Linux | Build the engine using Xlib. | OFF |
 | `BUILD_XCB` | Linux | Build the engine using XCB. | OFF |
+| `BUILD_DIRECT3D11` | Windows | Build the engine using Direct3D 11. | OFF |
 
 Para habilitar esses definições você deve habilitar no local onde está as flag(s) acima. Aqui um exemplo:
 
