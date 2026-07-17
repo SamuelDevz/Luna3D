@@ -390,4 +390,20 @@ namespace Luna
 
         return true;
     }
+
+    void Window::WinProc(xcb_generic_event_t * event)
+    {
+        switch(event->response_type & 0x7f)
+        {
+        case XCB_FOCUS_OUT:
+            if (lostFocus)
+                lostFocus();
+            break;
+
+        case XCB_FOCUS_IN:
+            if (inFocus)
+                inFocus();
+            break;
+        }
+    }
 }

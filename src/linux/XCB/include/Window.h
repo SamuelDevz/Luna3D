@@ -67,6 +67,8 @@ namespace Luna
 
         void InFocus(void(*func)()) noexcept;
         void LostFocus(void(*func)()) noexcept;
+
+        static void WinProc(xcb_generic_event_t * event);
     };
 
     inline xcb_connection_t* Window::Connection() const noexcept
