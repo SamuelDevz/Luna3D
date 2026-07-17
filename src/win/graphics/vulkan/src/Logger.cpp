@@ -1,44 +1,35 @@
 #include "Logger.h"
-#include "WinInclude.h"
-#include <windows.h>
 #include <format>
-using std::format_to;
+using std::format;
 
 #if !defined(__GNUC__)
     #include <ConsoleApi2.h>
     #include <ConsoleApi.h>
 #endif
 
-#ifndef CP_UTF8
-#define CP_UTF8 65001
-#endif
-
 namespace Luna
 {
-    enum ForeGroundColors : uint16
+    enum ForeGroundColors
     {
-        BLUE = FOREGROUND_BLUE | FOREGROUND_INTENSITY,
-        GREEN = FOREGROUND_GREEN | FOREGROUND_INTENSITY,
-        RED = FOREGROUND_RED | FOREGROUND_INTENSITY,
-        YELLOW = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY,
-        WHITE = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
-        GRAY = FOREGROUND_INTENSITY
+        BLUE = 1,
+        GREEN = 2,
+        RED = 4,
+        YELLOW = 6,
+        WHITE = 7,
+        GRAY = 8
     };
 
-    enum BackGroundColors : uint16
+    enum BackGroundColors
     {
-        DARK_RED = BACKGROUND_RED
+        DARK_RED = 64
     };
 
     Logger::Logger() noexcept
     {
         AllocConsole();
+        AttachConsole(GetCurrentProcessId());
         outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         errorHandle = GetStdHandle(STD_ERROR_HANDLE);
-        SetConsoleOutputCP(CP_UTF8);
-        
-        bufferA.reserve(2048);
-        bufferW.reserve(2048);
     }
 
     Logger::~Logger() noexcept
@@ -46,65 +37,92 @@ namespace Luna
         FreeConsole();
     }
 
-    void Logger::SetTextAttribute(HANDLE handle, const LogLevel level) noexcept
+    void SetTextAttribute(HANDLE handle, const LogLevel level)
     {
-        static const uint16 LOG_LEVEL_COLORS[6] = 
+        // FATAL, ERROR, WARN, INFO, DEBUG, TRACE
+        static uint8 LOG_LEVEL_COLORS[6]
         {
-            (BackGroundColors::DARK_RED | ForeGroundColors::WHITE),
+            BackGroundColors::DARK_RED,
             ForeGroundColors::RED,
             ForeGroundColors::YELLOW,
             ForeGroundColors::GREEN,
             ForeGroundColors::BLUE,
             ForeGroundColors::GRAY
         };
-        SetConsoleTextAttribute(handle, LOG_LEVEL_COLORS[static_cast<size_t>(level)]);
+        SetConsoleTextAttribute(handle, LOG_LEVEL_COLORS[level]);
     }
 
-    void Logger::OutputDebug(const LogLevel level, const std::string_view message) noexcept
+    void Logger::WriteToConsole(const LogLevel level, const string_view message) noexcept
     {
-        const bool isError = level <= LogLevel::LOG_LEVEL_ERROR;
-        HANDLE target = isError ? errorHandle : outputHandle;
-
-        static constexpr const char* LABELS[6] = 
-        {
-            "[FATAL]: ", "[ERROR]: ", "[WARN]:  ",
-            "[INFO]:  ", "[DEBUG]: ", "[TRACE]: "
-        };
-
-        bufferA.clear();
-
-        format_to(std::back_inserter(bufferA), "{} {}\n", 
-            LABELS[static_cast<size_t>(level)], message);
-
-        SetTextAttribute(target, level);
-        
-        OutputDebugStringA(bufferA.c_str());
-        WriteConsoleA(target, bufferA.data(), static_cast<DWORD>(bufferA.size()), nullptr, nullptr);
-
-        SetConsoleTextAttribute(target, ForeGroundColors::WHITE);
+        SetTextAttribute(outputHandle, level);
+        OutputDebugStringA(message.data());
+        WriteConsoleA(outputHandle, message.data(), message.size(), nullptr, nullptr);
     }
 
-    void Logger::OutputDebug(const LogLevel level, const std::wstring_view message) noexcept
+    void Logger::WriteToConsole(const LogLevel level, const wstring_view message) noexcept
     {
-        const bool isError = level <= LogLevel::LOG_LEVEL_ERROR;
-        HANDLE target = isError ? errorHandle : outputHandle;
+        SetTextAttribute(outputHandle, level);
+        OutputDebugStringW(message.data());
+        WriteConsoleW(outputHandle, message.data(), message.size(), nullptr, nullptr);
+    }
 
-        static constexpr const wchar_t* LABELS_W[6] = 
+    void Logger::WriteToConsoleError(const LogLevel level, const string_view message) noexcept
+    {
+        SetTextAttribute(errorHandle, level);
+        OutputDebugStringA(message.data());
+        WriteConsoleA(outputHandle, message.data(), message.size(), nullptr, nullptr);
+    }
+
+    void Logger::WriteToConsoleError(const LogLevel level, const wstring_view message) noexcept
+    {
+        SetTextAttribute(errorHandle, level);
+        OutputDebugStringW(message.data());
+        WriteConsoleW(outputHandle, message.data(), message.size(), nullptr, nullptr);
+    }
+
+    void Logger::OutputDebug(const LogLevel level, const string_view message) noexcept
+    {
+        const bool isError = level < LOG_LEVEL_WARN;
+
+        static constexpr const char* LOG_LEVEL_STRINGS[6]
         {
-            L"[FATAL]: ", L"[ERROR]: ", L"[WARN]:  ",
-            L"[INFO]:  ", L"[DEBUG]: ", L"[TRACE]: "
+            "[FATAL]:",
+            "[ERROR]:",
+            "[WARN]:",
+            "[INFO]:",
+            "[DEBUG]:",
+            "[TRACE]:"
         };
 
-        bufferW.clear();
+        string outputMessage = format("{} {}", LOG_LEVEL_STRINGS[level], message);
 
-        format_to(std::back_inserter(bufferW), L"{} {}\n", 
-            LABELS_W[static_cast<size_t>(level)], message);
+        if (isError) WriteToConsoleError(level, outputMessage);
+        else         WriteToConsole(level, outputMessage);
 
-        SetTextAttribute(target, level);
-        
-        OutputDebugStringW(bufferW.c_str());
-        WriteConsoleW(target, bufferW.data(), static_cast<DWORD>(bufferW.size()), nullptr, nullptr);
+        SetConsoleTextAttribute(outputHandle, ForeGroundColors::WHITE);
+        SetConsoleTextAttribute(errorHandle, ForeGroundColors::WHITE);
+    }
 
-        SetConsoleTextAttribute(target, ForeGroundColors::WHITE);
+    void Logger::OutputDebug(const LogLevel level, const wstring_view message) noexcept
+    {
+        const bool isError = level < LOG_LEVEL_WARN;
+
+        static constexpr const wchar_t* LOG_LEVEL_STRINGS_W[6]
+        {
+            L"[FATAL]:",
+            L"[ERROR]:",
+            L"[WARN]:",
+            L"[INFO]:",
+            L"[DEBUG]:",
+            L"[TRACE]:"
+        };
+
+        wstring outputMessage = format(L"{} {}", LOG_LEVEL_STRINGS_W[level], message);
+
+        if (isError) WriteToConsoleError(level, outputMessage);
+        else         WriteToConsole(level, outputMessage);
+
+        SetConsoleTextAttribute(outputHandle, ForeGroundColors::WHITE);
+        SetConsoleTextAttribute(errorHandle, ForeGroundColors::WHITE);
     }
 }

@@ -5,8 +5,5 @@ elseif(BUILD_DIRECT3D12)
 elseif(BUILD_VULKAN)
     add_subdirectory(vulkan)
 else()
-    message(FATAL_ERROR "Please choose a graphics API. Options:" 
-        "   BUILD_DIRECT3D11"
-        "   BUILD_DIRECT3D12)"
-        "   BUILD_VULKAN")
+    message(FATAL_ERROR "Please choose a graphics API (BUILD_DIRECT3D11, BUILD_DIRECT3D12 or BUILD_VULKAN).")
 endif()

@@ -1,7 +1,5 @@
 set(SOURCE_FILES src/VkError.cpp
-    src/Mesh.cpp
     src/Logger.cpp
-    src/ValidationLayer.cpp
     src/Graphics.cpp)
 
 if(SHARED_LIBRARIES)
