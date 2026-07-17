@@ -42,9 +42,7 @@ namespace Luna
         static uint32 frameCount{};
     #endif
 
-        double newFrameTime = timer.Reset();
-        if (newFrameTime <= 1.0)
-            frameTime = newFrameTime;
+        frameTime = timer.Reset();
 
     #ifdef _DEBUG
         totalTime += frameTime;
