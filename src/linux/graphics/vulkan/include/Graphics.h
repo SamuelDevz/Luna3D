@@ -4,6 +4,7 @@
 #include "Export.h"
 #include "Window.h"
 #include "Logger.h"
+#include "ValidationLayer.h"
 #include <vulkan/vulkan.h>
 
 namespace Luna
@@ -13,6 +14,8 @@ namespace Luna
     private:
         // pipeline
         VkInstance                   instance;
+
+        ValidationLayer * validationLayer;
 
     public:
         static Logger logger;
