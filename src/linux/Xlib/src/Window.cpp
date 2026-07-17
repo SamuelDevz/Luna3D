@@ -80,7 +80,7 @@ namespace Luna
     bool LoadPNG(const string_view filename, unsigned char ** imageData, int & width, int & height)
     {
         FILE *fp = fopen(filename.data(), "rb");
-        if (!fp) 
+        if (!fp)
             return false;
     
         png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -136,7 +136,6 @@ namespace Luna
         png_read_image(png, rowPointers);
         png_destroy_read_struct(&png, &info, nullptr);
         delete[] rowPointers;
-        delete[] *imageData;
         fclose(fp);
 
         return true;
