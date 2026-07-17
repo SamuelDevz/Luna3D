@@ -52,6 +52,7 @@ Para construir este projeto, você precisa ter instalado as seguintes dependênc
 - Xcursor
 - png
 - xkbcommon
+- xcb-errors
 
 **OBS:** Tu precisa do arquivo no formato Xcursor para mudar o cursor da janela. Uma dica seria pegar um arquivo .CUR e converte-lo usando [win2xcur](https://github.com/quantum5/win2xcur)
 
