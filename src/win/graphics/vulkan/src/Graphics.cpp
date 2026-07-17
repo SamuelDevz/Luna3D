@@ -13,7 +13,16 @@ namespace Luna
 {
     Logger Graphics::logger;
 
-    Graphics::Graphics() noexcept : instance{nullptr}
+    Graphics::Graphics() noexcept
+        : backBufferCount{2},
+        vSync{false},
+        instance{nullptr},
+        physicalDevice{nullptr},
+        device{nullptr},
+        surface{nullptr},
+        swapchain{nullptr},
+        buffers{nullptr},
+        backBufferIndex{}
     {
         validationLayer = new ValidationLayer();
     }
