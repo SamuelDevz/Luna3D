@@ -102,6 +102,16 @@ namespace Luna
     {
         switch (msg)
         {
+        case WM_KILLFOCUS:
+            if (lostFocus)
+                lostFocus();
+            return 0;
+
+        case WM_SETFOCUS:
+            if (inFocus)
+                inFocus();
+            return 0;
+
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;
