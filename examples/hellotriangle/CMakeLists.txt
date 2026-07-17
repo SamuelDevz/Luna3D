@@ -1,3 +1,5 @@
 if(BUILD_DIRECT3D11)
     add_subdirectory(d3d11)
+elseif(BUILD_DIRECT3D12)
+    add_subdirectory(d3d12)
 endif()
