@@ -13,6 +13,7 @@ namespace Luna
     {
         VkImage image;
         VkImageView view;
+        VkFramebuffer framebuffer;
     };
 
     class DLL Graphics
