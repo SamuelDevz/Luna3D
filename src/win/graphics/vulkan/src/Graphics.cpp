@@ -15,6 +15,7 @@ namespace Luna
     Graphics::Graphics() noexcept
         : backBufferCount{2},
         vSync{false},
+        bgColor{},
         instance{nullptr},
         physicalDevice{nullptr},
         device{nullptr},
@@ -28,7 +29,9 @@ namespace Luna
         queue{nullptr},
         imageAvailableSemaphore{nullptr},
         renderFinishedSemaphore{nullptr},
-        fence{nullptr}
+        fence{nullptr},
+        viewport{},
+        scissorRect{}
     {
         validationLayer = new ValidationLayer();
     }
@@ -582,5 +585,29 @@ namespace Luna
         VkThrowIfFailed(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphore));
 
         vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue);
+
+        // ---------------------------------------------------
+        // Viewport and Scissor Rectangle
+        // ---------------------------------------------------
+
+        viewport.x = 0;
+        viewport.y = 0;
+        viewport.width = static_cast<float>(window->Width());
+        viewport.height = static_cast<float>(window->Height());
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+
+        scissorRect = { 0, 0, static_cast<uint32>(window->Width()), static_cast<uint32>(window->Height()) };
+
+        // ---------------------------------------------------
+        // Backbuffer Background Color
+        // ---------------------------------------------------
+
+        const COLORREF color = window->Color();
+
+        bgColor.float32[0] = GetRValue(color) / 255.0f;
+        bgColor.float32[1] = GetGValue(color) / 255.0f;
+        bgColor.float32[2] = GetBValue(color) / 255.0f;
+        bgColor.float32[3] = 1.0f;
     }
 }
