@@ -13,6 +13,7 @@ endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     option(BUILD_X11 "Build the engine using Xlib" OFF)
+    option(BUILD_XCB "Build the engine using XCB" OFF)
 endif ()
 
 add_subdirectory(src)
