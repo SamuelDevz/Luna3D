@@ -33,6 +33,7 @@
 
 # batch files
 *.bat
+*.sh
 
 build/
 .vscode/
