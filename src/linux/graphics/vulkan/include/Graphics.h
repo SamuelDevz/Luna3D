@@ -14,7 +14,8 @@ namespace Luna
     private:
         // pipeline
         VkInstance                   instance;
-
+        VkPhysicalDevice             physicalDevice;
+        
         ValidationLayer * validationLayer;
 
     public:

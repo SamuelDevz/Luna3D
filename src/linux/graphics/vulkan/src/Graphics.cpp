@@ -1,6 +1,8 @@
 #include "Graphics.h"
 #include "VkError.h"
 #include "Utils.h"
+#include <vector>
+using std::vector;
 
 #ifdef PLATAFORM_XLIB
     #include <vulkan/vulkan_xlib.h>
@@ -10,7 +12,9 @@ namespace Luna
 {
     Logger Graphics::logger;
 
-    Graphics::Graphics() noexcept : instance{nullptr}
+    Graphics::Graphics() noexcept 
+        : instance{nullptr},
+        physicalDevice{nullptr}
     {
         validationLayer = new ValidationLayer();
     }
@@ -72,5 +76,16 @@ namespace Luna
     #ifdef _DEBUG
         validationLayer->Initialize(instance, &logger);
     #endif
+
+        // ---------------------------------------------------
+        // Physical Device
+        // ---------------------------------------------------
+
+        uint32 gpuCount{};
+        VkThrowIfFailed(vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr));
+
+        vector<VkPhysicalDevice> gpus(gpuCount);
+        VkThrowIfFailed(vkEnumeratePhysicalDevices(instance, &gpuCount, gpus.data()));
+        physicalDevice = gpus[0];
     }
 }
