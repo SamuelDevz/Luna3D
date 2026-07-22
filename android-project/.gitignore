@@ -1,0 +1,14 @@
+.gradle
+.idea
+**/*.iml
+local.properties
+build
+.cxx
+*~
+.externalNativeBuild
+libwebp
+.DS_Store
+**/ndkHelperBin
+**/.cxx
+display-p3/third_party
+.artifacts
