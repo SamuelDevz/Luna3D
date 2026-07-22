@@ -3,8 +3,13 @@ set(SOURCE_FILES src/Timer.cpp
     src/Game.cpp
     src/Engine.cpp)
 
-find_package(X11 REQUIRED COMPONENTS Xcursor)
+find_package(X11 REQUIRED COMPONENTS Xcursor Xrandr)
 find_package(PNG REQUIRED)
+
+set(LIBRARIES X11::X11 
+    X11::Xcursor
+    X11::Xrandr
+    ${PNG_LIBRARIES})
 
 # window library
 if(SHARED_LIBRARIES)
@@ -14,7 +19,7 @@ else()
 endif()
 
 target_include_directories(window PUBLIC include ${X11_INCLUDE_DIR} ${PNG_INCLUDE_DIRS})
-target_link_libraries(window PUBLIC X11::X11 X11::Xcursor ${PNG_LIBRARIES})
+target_link_libraries(window PUBLIC ${LIBRARIES})
 target_compile_definitions(window PUBLIC $<IF:$<CONFIG:DEBUG>,_DEBUG,NDEBUG>)
 
 # graphics library
@@ -24,7 +29,6 @@ FetchContent_Declare(
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../graphics
 )
 FetchContent_MakeAvailable(graphics)
-target_compile_definitions(graphics PUBLIC PLATFORM_XLIB)
 
 # engine library
 if(SHARED_LIBRARIES)

@@ -15,6 +15,8 @@ namespace Luna
         // pipeline
         VkInstance                   instance;
         VkPhysicalDevice             physicalDevice;
+
+        void LogHardwareInfo(const Window * const window) const;
         
         ValidationLayer * validationLayer;
 
