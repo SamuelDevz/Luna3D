@@ -12,6 +12,9 @@ using std::vector;
 #ifdef PLATAFORM_XLIB
     #include <vulkan/vulkan_xlib.h>
     #include <X11/extensions/Xrandr.h>
+#elif PLATAFORM_XCB
+    #include <vulkan/vulkan_xcb.h>
+    #include <xcb/randr.h>
 #endif
 
 namespace Luna
@@ -151,6 +154,95 @@ namespace Luna
 
         XRRFreeScreenResources(resources);
     }
+#elif PLATAFORM_XCB
+    static int32 calculateRefreshRate(const xcb_randr_mode_info_t* const mi)
+    {
+        if (mi == nullptr || !(mi->htotal && mi->vtotal))
+            return 0;
+        return static_cast<int32>(round(mi->dot_clock / static_cast<double>(mi->htotal * mi->vtotal)));
+    }
+    
+    static const xcb_randr_mode_info_t* getModeInfo(
+        const xcb_randr_get_screen_resources_current_reply_t* const resources, 
+        xcb_randr_mode_t id)
+    {
+        xcb_randr_mode_info_iterator_t it = 
+            xcb_randr_get_screen_resources_current_modes_iterator(resources);
+        while (it.rem)
+        {
+            if (it.data->id == id)
+                return it.data;
+            xcb_randr_mode_info_next(&it);
+        }
+        return nullptr;
+    }
+    
+    static void enumerateXCBMonitors(Logger& logger, xcb_connection_t* connection, xcb_window_t window)
+    {
+        xcb_randr_get_screen_resources_current_cookie_t resourcesCookie = 
+            xcb_randr_get_screen_resources_current(connection, window);
+
+        xcb_randr_get_screen_resources_current_reply_t* resources = 
+            xcb_randr_get_screen_resources_current_reply(connection, resourcesCookie, nullptr);
+
+        if (!resources)
+            return;
+
+        int32 numOutputs = xcb_randr_get_screen_resources_current_outputs_length(resources);
+        xcb_randr_output_t* outputs = xcb_randr_get_screen_resources_current_outputs(resources);
+
+        for (size_t i = 0; i < numOutputs; ++i)
+        {
+            xcb_randr_output_t outId = outputs[i];
+
+            xcb_randr_get_output_info_cookie_t outputInfoCookie = 
+                xcb_randr_get_output_info(connection, outId, resources->config_timestamp);
+
+            xcb_randr_get_output_info_reply_t* outputInfo = 
+                xcb_randr_get_output_info_reply(connection, outputInfoCookie, nullptr);
+
+            if (!outputInfo)
+                continue;
+
+            if (outputInfo->connection != XCB_RANDR_CONNECTION_CONNECTED)
+            {
+                free(outputInfo);
+                continue;
+            }
+
+            int32 nameLen = xcb_randr_get_output_info_name_length(outputInfo);
+            uint8 * namePtr = xcb_randr_get_output_info_name(outputInfo);
+            string outputName(reinterpret_cast<char*>(namePtr), nameLen);
+
+            logger.OutputDebug(LOG_LEVEL_INFO, format("---> Monitor: {}\n", outputName));
+
+            if (outputInfo->crtc != XCB_NONE)
+            {
+                xcb_randr_get_crtc_info_cookie_t crtcInfoCookie = 
+                    xcb_randr_get_crtc_info(connection, outputInfo->crtc, resources->config_timestamp);
+
+                xcb_randr_get_crtc_info_reply_t* crtcInfo = 
+                    xcb_randr_get_crtc_info_reply(connection, crtcInfoCookie, nullptr);
+
+                if (crtcInfo)
+                {
+                    const xcb_randr_mode_info_t* const modeInfo = getModeInfo(resources, crtcInfo->mode);
+                    const int32 refreshRate = calculateRefreshRate(modeInfo);
+
+                    logger.OutputDebug(LOG_LEVEL_INFO,
+                        format("---> Resolution: {}x{} {}Hz\n",
+                            crtcInfo->width, crtcInfo->height, refreshRate)
+                    );
+
+                    free(crtcInfo);
+                }
+            }
+
+            free(outputInfo);
+        }
+
+        free(resources);
+    }
 #endif
 
     void Graphics::LogHardwareInfo(const Window * const window) const
@@ -249,6 +341,8 @@ namespace Luna
 
     #ifdef PLATAFORM_XLIB
         enumerateXlibMonitors(logger, window->XDisplay(), window->Id());
+    #elif PLATAFORM_XCB
+        enumerateXCBMonitors(logger, window->Connection(), window->Id());
     #endif
     }
 
