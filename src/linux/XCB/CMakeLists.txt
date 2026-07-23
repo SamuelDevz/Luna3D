@@ -3,7 +3,14 @@ set(SOURCE_FILES src/Timer.cpp
     src/Game.cpp
     src/Engine.cpp)
 
-find_package(X11 REQUIRED COMPONENTS Xcursor xkbcommon xkbcommon_X11 xcb xcb_keysyms X11_xcb xcb_icccm)
+find_package(X11 REQUIRED COMPONENTS Xcursor 
+    xkbcommon 
+    xkbcommon_X11 
+    xcb 
+    xcb_keysyms 
+    X11_xcb 
+    xcb_icccm 
+    xcb_randr)
 find_package(PNG REQUIRED)
 find_library(XCB_ERRORS_LIB xcb-errors)
 
@@ -14,6 +21,7 @@ set(LIBRARIES X11::xcb
     X11::xkbcommon
     X11::xkbcommon_X11
     X11::Xcursor
+    X11::xcb_randr
     PNG::PNG)
 
 # window library
