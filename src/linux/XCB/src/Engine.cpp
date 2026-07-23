@@ -24,6 +24,7 @@ namespace Luna
         delete game;
         delete input;
         delete window;
+        delete graphics;
     }
 
     int32 Engine::Start(Game * const game)
