@@ -13,6 +13,8 @@ find_package(Vulkan REQUIRED)
 
 if(BUILD_X11)
     target_compile_definitions(graphics PUBLIC PLATAFORM_XLIB)
+elseif(BUILD_XCB)
+    target_compile_definitions(graphics PUBLIC PLATAFORM_XCB)
 endif()
 
 target_include_directories(graphics PUBLIC include ${Vulkan_INCLUDE_DIR})
