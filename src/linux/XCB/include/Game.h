@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Graphics.h"
 #include "Window.h"
 #include "Input.h"
 #include "Export.h"
@@ -10,10 +11,11 @@ namespace Luna
     class DLL Game
     {
     protected:
+        static Graphics* & graphics;
         static Window*   & window;
         static Input*    & input;
         static double    & frameTime;
-        
+
     public:
         explicit Game() noexcept;
         virtual ~Game();

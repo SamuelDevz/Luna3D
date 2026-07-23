@@ -5,6 +5,7 @@ using std::format;
 
 namespace Luna 
 {
+    Graphics* Engine::graphics = nullptr;
     Window*   Engine::window = nullptr;
     Input*    Engine::input = nullptr;
     Game*     Engine::game = nullptr;
@@ -15,6 +16,7 @@ namespace Luna
     Engine::Engine() noexcept
     {
         window = new Window();
+        graphics = new Graphics();
     }
 
     Engine::~Engine() noexcept
@@ -31,6 +33,8 @@ namespace Luna
         window->Create();
 
         input = new Input();
+
+        graphics->Initialize(window);
 
         return Loop();
     }
@@ -96,7 +100,7 @@ namespace Luna
             {
                 if (Quit(event, window->WMDeleteWindow()))
                     quit = true;
-                
+
                 EngineProc(event);
                 free(event);
 
@@ -106,7 +110,7 @@ namespace Luna
 
             if (input->XKeyPress(VK_PAUSE))
                 (paused) ? Resume() : Pause();
-            
+
             if (!paused)
             {
                 frameTime = FrameTime();
